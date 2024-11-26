@@ -26,13 +26,19 @@ public class Server {
         @Override
         public void run()
         {
-            while (isRunning) {
-                Socket clientSocket = null;
-                synchronized (queueLock) {
-                    while (isRunning && clientsQueue.isEmpty()) {
-                        try {
+            while (isRunning)
+            {
+                Socket clientSocket;
+                synchronized (queueLock)
+                {
+                    while (isRunning && clientsQueue.isEmpty())
+                    {
+                        try
+                        {
                             queueLock.wait();
-                        } catch (InterruptedException e) {
+                        }
+                        catch (InterruptedException e)
+                        {
                             return;
                         }
                     }
@@ -40,7 +46,8 @@ public class Server {
                     clientSocket = clientsQueue.poll();
                 }
 
-                if (clientSocket != null) {
+                if (clientSocket != null)
+                {
                     processClientConnection(clientSocket);
                 }
             }
@@ -50,7 +57,8 @@ public class Server {
         {
             try {
                 Prot_BSPP bsppHandler = new Prot_BSPP(socket);  // Passer le socket au constructeur
-                while (isRunning) {
+                while (isRunning)
+                {
                     byte[] requestData = SocketManager.receiveData(socket);
                     if (requestData.length == 0) break;
 
@@ -78,8 +86,6 @@ public class Server {
     }
 
 
-
-
     public static void main(String[] args)
     {
         initServer();
@@ -99,7 +105,8 @@ public class Server {
     private static void initServer()
     {
         readConfig();
-        try {
+        try
+        {
             serverSocket = SocketManager.createServerSocket(String.valueOf(PORT_PAYMENT));
             logger.info("Serveur démarré sur port " + PORT_PAYMENT);
         } catch (IOException e) {
@@ -110,23 +117,29 @@ public class Server {
 
     private static void acceptClients()
     {
-        while (isRunning) {
+        while (isRunning)
+        {
             try {
                 StringBuilder clientIp = new StringBuilder();
                 Socket clientSocket = SocketManager.acceptConnection(serverSocket, clientIp);
 
-                synchronized (queueLock) {
-                    if (clientsQueue.size() < MAX_THREADS) {
+                synchronized (queueLock)
+                {
+                    if (clientsQueue.size() < MAX_THREADS)
+                    {
                         clientsQueue.offer(clientSocket);
                         queueLock.notify();
                         logger.info("Client connecté: " + clientIp);
-                    } else {
+                    }
+                    else
+                    {
                         clientSocket.close();
                         logger.warning("File pleine, connexion refusée");
                     }
                 }
             } catch (IOException e) {
-                if (isRunning) {
+                if (isRunning)
+                {
                     logger.warning("Erreur acceptation client: " + e.getMessage());
                 }
             }
@@ -139,13 +152,16 @@ public class Server {
             File configFile = new File(CONFIG_FILE);
 
             try {
-                if (!configFile.exists()) {
+                if (!configFile.exists())
+                {
                     PORT_PAYMENT = 50001;  // Port différent pour le serveur BSPP
                     NB_THREADS = 2;
                     props.setProperty("PORT_PAYMENT", String.valueOf(PORT_PAYMENT));
                     props.setProperty("NB_THREADS", String.valueOf(NB_THREADS));
                     props.store(new FileOutputStream(configFile), null);
-                } else {
+                }
+                else
+                {
                     props.load(new FileInputStream(configFile));
                     PORT_PAYMENT = Integer.parseInt(props.getProperty("PORT_PAYMENT", "50001"));
                     NB_THREADS = Integer.parseInt(props.getProperty("NB_THREADS", "2"));
