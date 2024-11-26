@@ -13,6 +13,11 @@ public class ResultatBSPP
         this.success = false;
         this.message = "";
     }
+    public ResultatBSPP(boolean success, String message)
+    {
+        this.success = success;
+        this.message = message;
+    }
 
     public boolean isSuccess()
     {

@@ -8,7 +8,7 @@ public class ConnectDB {
     private static ConnectDB instance = null;
     private static Connection connection = null;
 
-    private static final String URL = "jdbc:mysql://192.168.56.48/PourStudent";
+    private static final String URL = "jdbc:mysql://192.168.163.128/PourStudent";
     private static final String USER = "Student";
     private static final String PASSWORD = "PassStudent1_";
     private static final Logger LOGGER = Logger.getLogger(ConnectDB.class.getName());
@@ -66,5 +66,41 @@ public class ConnectDB {
     @Override
     protected Object clone() throws CloneNotSupportedException {
         throw new CloneNotSupportedException("Cloning of singleton ConnectDB is not allowed");
+    }
+
+    public static void main(String[] args)
+    {
+        ConnectDB bd = ConnectDB.getInstance();//on recupere l'instance de la connexion
+        Connection conn = bd.getConnection();//on recupere la connexion
+
+        if(conn != null)
+        {
+            System.out.println("Connexion établie");
+            //rucuperation des auteurs
+            try
+            {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT * FROM authors");
+                while(rs.next())
+                {
+                    //formatage de l'affichage
+                    System.out.println("ID : "+rs.getInt("id")+" Nom : "+rs.getString("last_name")+" Prenom : "+rs.getString("first_name")+" Date de naissance : "+rs.getString("birth_date"));
+                }
+                ConnectDB.closeConnection();
+            }
+            catch(SQLException e)
+            {
+                e.printStackTrace();
+            }
+        }
+        else
+        {
+            System.out.println("Erreur de connexion");
+        }
+
+
+
+
+
     }
 }

@@ -24,7 +24,10 @@ public class Book
         this.publishYear = publishYear;
     }
 
-    public Book() {
+    public Book()
+    {
+        this.author = new Author();
+        this.subject = new Subject();
 
     }
 

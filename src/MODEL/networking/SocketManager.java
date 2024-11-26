@@ -28,6 +28,15 @@ public class SocketManager {
         }
     }
 
+    //*fait un appel à socket() pour créer la socket
+    //o construit l’adresse réseau de la socket par appel à getaddrinfo()
+    //o fait appel à bind() pour lier la socket à l’adresse réseau*/
+    public static ServerSocket createServerSocket(String port) throws IOException
+    {
+        ServerSocket serverSocket = new ServerSocket(Integer.parseInt(port));
+        return serverSocket;
+    }
+
     /**
      * Accepts a connection on a server socket and optionally retrieves client IP.
      * @param serverSocket The server socket listening for connections
