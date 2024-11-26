@@ -68,11 +68,14 @@ public class MainWindowClientAchat extends JFrame
         setVisible(true);
     }
 
-    private void setupBooksTable() {
-        String[] columns = {"ID", "Titre", "Auteur", "Sujet", "Prix", "Stock"};
-        booksTableModel = new DefaultTableModel(columns, 0) {
+    private void setupBooksTable()
+    {
+        String[] columns = {"Id", "Titre", "Auteur", "Sujet", "ISBN", "Pages","Stock", "Prix", "Année"};
+        booksTableModel = new DefaultTableModel(columns, 0)
+        {
             @Override
-            public boolean isCellEditable(int row, int column) {
+            public boolean isCellEditable(int row, int column)
+            {
                 return false;
             }
         };
@@ -183,6 +186,7 @@ public class MainWindowClientAchat extends JFrame
             // Charger les listes
             loadAuthorsList();
             loadSubjectsList();
+            updateCartTable();
 
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Erreur de communication avec le serveur", "Erreur", JOptionPane.ERROR_MESSAGE);
@@ -192,11 +196,15 @@ public class MainWindowClientAchat extends JFrame
     private void handleSearch() {
         try {
             String searchInfo = buildSearchInfoBook();
+            System.out.println("Search info: " + searchInfo);
             ResultatBSPP resultat = protocol.BSPP_Client_Op("GET_BOOKS#" + searchInfo);
-
-            if (resultat.isSuccess()) {
+            System.out.println("(handleSearch()): "+resultat.getMessage());
+            if (resultat.isSuccess())
+            {
                 updateBooksTable(resultat.getMessage());
-            } else {
+            }
+            else
+            {
                 JOptionPane.showMessageDialog(this, "Erreur: " + resultat.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
             }
         } catch (IOException ex) {
@@ -207,16 +215,25 @@ public class MainWindowClientAchat extends JFrame
     private String buildSearchInfoBook()
     {
         StringBuilder info = new StringBuilder();
-        info.append(titreField.getText().trim()).append("#");
         info.append(auteurCombo.getSelectedItem()).append("#");
         info.append(sujetCombo.getSelectedItem()).append("#");
+        if(titreField.getText().isEmpty())
+        {
+            info.append("NULL#");
+        }
+        else
+        {
+            info.append(titreField.getText()).append("#");
+        }
         info.append(prixMaxSpinner.getValue());
         return info.toString();
     }
 
-    private void handleAddToCart() {
+    private void handleAddToCart()
+    {
         int selectedRow = booksTable.getSelectedRow();
-        if (selectedRow == -1) {
+        if (selectedRow == -1)
+        {
             JOptionPane.showMessageDialog(this, "Veuillez sélectionner un livre", "Erreur", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -227,17 +244,21 @@ public class MainWindowClientAchat extends JFrame
 
             // Vérifier le stock disponible
             int stockDisponible = Integer.parseInt(booksTable.getValueAt(selectedRow, 5).toString());
-            if (quantity > stockDisponible) {
+            if (quantity > stockDisponible)
+            {
                 JOptionPane.showMessageDialog(this, "Stock insuffisant", "Erreur", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             ResultatBSPP resultat = protocol.BSPP_Client_Op("ADD_CADDY_ITEM#" + clientId + "#" + bookId + "#" + quantity);
-            if (resultat.isSuccess()) {
+            if (resultat.isSuccess())
+            {
                 updateCartTable();
                 // Mettre à jour le stock dans la table des livres
-                booksTableModel.setValueAt(stockDisponible - quantity, selectedRow, 5);
-            } else {
+                booksTableModel.setValueAt(stockDisponible - quantity, selectedRow, 6);
+            }
+            else
+            {
                 JOptionPane.showMessageDialog(this, "Erreur: " + resultat.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
             }
         } catch (IOException ex) {
@@ -246,9 +267,11 @@ public class MainWindowClientAchat extends JFrame
     }
 
 
-    private void handleRemoveFromCart() {
+    private void handleRemoveFromCart()
+    {
         int selectedRow = cartTable.getSelectedRow();
-        if (selectedRow == -1) {
+        if (selectedRow == -1)
+        {
             JOptionPane.showMessageDialog(this,
                     "Veuillez sélectionner un article du panier",
                     "Erreur",
@@ -256,29 +279,24 @@ public class MainWindowClientAchat extends JFrame
             return;
         }
 
-        try {
+        try
+        {
             String itemId = cartTable.getValueAt(selectedRow, 0).toString();
             int quantity = Integer.parseInt(cartTable.getValueAt(selectedRow, 2).toString());
 
             ResultatBSPP resultat = protocol.BSPP_Client_Op("DEL_CADDY_ITEM#" + itemId);
-            if (resultat.isSuccess()) {
-                // Mettre à jour le panier
+            if (resultat.isSuccess())
+            {
+                // Mettre à jour l'affichage du panier
                 updateCartTable();
-
-                // Mettre à jour le stock dans la table des livres
-                for (int i = 0; i < booksTableModel.getRowCount(); i++) {
-                    if (booksTableModel.getValueAt(i, 0).toString().equals(itemId)) {
-                        int currentStock = Integer.parseInt(booksTableModel.getValueAt(i, 5).toString());
-                        booksTableModel.setValueAt(currentStock + quantity, i, 5);
-                        break;
-                    }
-                }
 
                 JOptionPane.showMessageDialog(this,
                         "Article supprimé du panier",
                         "Succès",
                         JOptionPane.INFORMATION_MESSAGE);
-            } else {
+            }
+            else
+            {
                 JOptionPane.showMessageDialog(this,
                         "Erreur: " + resultat.getMessage(),
                         "Erreur",
@@ -292,30 +310,38 @@ public class MainWindowClientAchat extends JFrame
         }
     }
 
-    private void handleEmptyCart() {
+    private void handleEmptyCart()
+    {
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Voulez-vous vraiment vider le panier ?",
                 "Confirmation",
                 JOptionPane.YES_NO_OPTION);
 
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
+        if (confirm == JOptionPane.YES_OPTION)
+        {
+            try
+            {
                 ResultatBSPP resultat = protocol.BSPP_Client_Op("CANCEL_CADDY#" + clientId);
-                if (resultat.isSuccess()) {
+                if (resultat.isSuccess())
+                {
                     // Remettre à jour les stocks dans la table des livres
-                    for (int i = 0; i < cartTableModel.getRowCount(); i++) {
+                    /*for (int i = 0; i < cartTableModel.getRowCount(); i++)
+                    {
                         String itemId = cartTableModel.getValueAt(i, 0).toString();
                         int quantity = Integer.parseInt(cartTableModel.getValueAt(i, 2).toString());
 
                         // Mettre à jour le stock dans la table des livres
-                        for (int j = 0; j < booksTableModel.getRowCount(); j++) {
-                            if (booksTableModel.getValueAt(j, 0).toString().equals(itemId)) {
+                        for (int j = 0; j < booksTableModel.getRowCount(); j++)
+                        {
+                            if (booksTableModel.getValueAt(j, 0).toString().equals(itemId))
+                            {
                                 int currentStock = Integer.parseInt(booksTableModel.getValueAt(j, 5).toString());
                                 booksTableModel.setValueAt(currentStock + quantity, j, 5);
                                 break;
                             }
                         }
-                    }
+                    }*/
+
 
                     // Vider la table du panier
                     cartTableModel.setRowCount(0);
@@ -324,7 +350,9 @@ public class MainWindowClientAchat extends JFrame
                             "Panier vidé avec succès",
                             "Succès",
                             JOptionPane.INFORMATION_MESSAGE);
-                } else {
+                }
+                else
+                {
                     JOptionPane.showMessageDialog(this,
                             "Erreur: " + resultat.getMessage(),
                             "Erreur",
@@ -339,9 +367,11 @@ public class MainWindowClientAchat extends JFrame
         }
     }
 
-    private void handlePayment() {
+    private void handlePayment()
+    {
         // Vérifier si le panier n'est pas vide
-        if (cartTableModel.getRowCount() == 0) {
+        if (cartTableModel.getRowCount() == 0)
+        {
             JOptionPane.showMessageDialog(this,
                     "Le panier est vide",
                     "Erreur",
@@ -351,19 +381,22 @@ public class MainWindowClientAchat extends JFrame
 
         // Calculer le total
         float total = 0;
-        for (int i = 0; i < cartTableModel.getRowCount(); i++) {
-            total += Float.parseFloat(cartTableModel.getValueAt(i, 4).toString());
-        }
+
+        //le total se trouve au dernier element
+        total = Float.parseFloat(cartTableModel.getValueAt(cartTableModel.getRowCount()-1, 4).toString());
 
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Total à payer: " + String.format("%.2f", total) + "€\nConfirmer le paiement ?",
                 "Confirmation",
                 JOptionPane.YES_NO_OPTION);
 
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
+        if (confirm == JOptionPane.YES_OPTION)
+        {
+            try
+            {
                 ResultatBSPP resultat = protocol.BSPP_Client_Op("PAY_CADDY#" + clientId);
-                if (resultat.isSuccess()) {
+                if (resultat.isSuccess())
+                {
                     JOptionPane.showMessageDialog(this,
                             "Paiement effectué avec succès",
                             "Succès",
@@ -371,7 +404,9 @@ public class MainWindowClientAchat extends JFrame
 
                     // Après le paiement, réinitialiser pour un nouveau client
                     resetForNewClient();
-                } else {
+                }
+                else
+                {
                     JOptionPane.showMessageDialog(this,
                             "Erreur: " + resultat.getMessage(),
                             "Erreur",
@@ -386,16 +421,20 @@ public class MainWindowClientAchat extends JFrame
         }
     }
 
-    private void handleCancel() {
+    private void handleCancel()
+    {
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Voulez-vous vraiment annuler la session ?",
                 "Confirmation",
                 JOptionPane.YES_NO_OPTION);
 
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
+        if (confirm == JOptionPane.YES_OPTION)
+        {
+            try
+            {
                 // Si le panier n'est pas vide, on le vide d'abord
-                if (cartTableModel.getRowCount() > 0) {
+                if (cartTableModel.getRowCount() > 0)
+                {
                     handleEmptyCart();
                 }
 
@@ -442,18 +481,24 @@ public class MainWindowClientAchat extends JFrame
         clientId = null;
     }
 
-    private void loadAuthorsList() {
+    private void loadAuthorsList()
+    {
         try {
-            ResultatBSPP resultat = protocol.BSPP_Client_Op("GET_AUTHORS");
-            if (resultat.isSuccess()) {
+            ResultatBSPP resultat = protocol.BSPP_Client_Op("GET_AUTHORS#");
+            System.out.println("(loadAuthorsList()): "+resultat.getMessage());
+            if (resultat.isSuccess())
+            {
                 auteurCombo.removeAllItems();
                 auteurCombo.addItem("NULL"); // Option par défaut
-                String[] lines = resultat.getMessage().split("\n");
-                for (String line : lines) {
-                    String[] fields = line.split("#");
-                    if (fields.length >= 3) {
-                        auteurCombo.addItem(fields[2] + " " + fields[1]); // prénom + nom
-                    }
+                for (String line : resultat.getMessage().split("\n") )
+                {
+                    String[] parts = line.split("#",2);
+                    String id = parts[0];
+                    String prenom_nom = parts[1];
+                    System.out.println("(loadAuthorsList()) part[0] "+id);
+                    System.out.println("(loadAuthorsList()) part[1] "+prenom_nom);
+
+                    auteurCombo.addItem(prenom_nom); // prénom + nom
                 }
             }
         } catch (IOException ex) {
@@ -461,18 +506,21 @@ public class MainWindowClientAchat extends JFrame
         }
     }
 
-    private void loadSubjectsList() {
+    private void loadSubjectsList()
+    {
         try {
-            ResultatBSPP resultat = protocol.BSPP_Client_Op("GET_SUBJECTS");
-            if (resultat.isSuccess()) {
+            ResultatBSPP resultat = protocol.BSPP_Client_Op("GET_SUBJECTS#");
+            if (resultat.isSuccess())
+            {
                 sujetCombo.removeAllItems();
                 sujetCombo.addItem("NULL"); // Option par défaut
-                String[] lines = resultat.getMessage().split("\n");
-                for (String line : lines) {
-                    String[] fields = line.split("#");
-                    if (fields.length >= 2) {
-                        sujetCombo.addItem(fields[1]); // nom du sujet
-                    }
+                for (String line : resultat.getMessage().split("\n"))
+                {
+                    String[] parts = line.split("#");
+                    String id = parts[0];
+                    String nom = parts[1];
+
+                    sujetCombo.addItem(nom);
                 }
             }
         } catch (IOException ex) {
@@ -483,34 +531,91 @@ public class MainWindowClientAchat extends JFrame
     private void updateBooksTable(String data)
     {
         booksTableModel.setRowCount(0);
+        System.out.println("(updateBooksTable()): "+data);
         // À implémenter: parser les données et les ajouter à la table
+        for (String line : data.split("\n")) //id#authorprenom + author nom#subjectName#title#isbn#pages#quantity#price#publicationDate
+        {                                           //BookTable model {"Id", "Titre", "Auteur", "Sujet", "ISBN", "Pages","Stock", "Prix", "Année"};
+            String[] parts = line.split("#");
+            if (parts.length >= 9)
+            {
+                Object[] row = {
+                        parts[0], // ID
+                        parts[3], // Titre
+                        parts[1], // Auteur
+                        parts[2], // Sujet
+                        parts[4], // ISBN
+                        parts[5], // Pages
+                        parts[6], // Stock
+                        parts[7], // Prix
+                        parts[8]  // Année
+
+                };
+                booksTableModel.addRow(row);
+            }
+        }
     }
 
-    private void updateCartTable() {
-        try {
-            ResultatBSPP resultat = protocol.BSPP_Client_Op("GET_CADDY_ITEMS#" + clientId);
-            if (resultat.isSuccess()) {
-                cartTableModel.setRowCount(0);
-                String[] lines = resultat.getMessage().split("\n");
-                for (String line : lines) {
-                    String[] fields = line.split("#");
-                    if (fields.length >= 4) {
-                        float prixUnitaire = Float.parseFloat(fields[3]);
-                        int quantite = Integer.parseInt(fields[2]);
-                        Object[] row = {
-                                fields[0], // ID
-                                fields[1], // Titre
-                                quantite,  // Quantité
-                                prixUnitaire, // Prix unitaire
-                                prixUnitaire * quantite // Total
-                        };
-                        cartTableModel.addRow(row);
+    private void updateCartTable()
+    {
+        try
+        {
+            ResultatBSPP resultat = protocol.BSPP_Client_Op("GET_CADDY#" + clientId); //"GET_CADDY#OK\n" + caddy.getId() + "#" + caddy.getDate() + "#" + caddy.getAmount() + "#" + caddy.getPayed();
+            if (resultat.isSuccess())
+            {
+                String[] lines = resultat.getMessage().split("#",4);
+                String caddyId = lines[0];
+                String caddyDate = lines[1];
+                String caddyAmount = lines[2];
+                String caddyPayed = lines[3];
+
+                resultat=protocol.BSPP_Client_Op("GET_CADDY_ITEMS#" + caddyId);//GET_CADDY_ITEMS#\n item.getId() + "#" + item.getBook().getTitle() + "#" + item.getQuantity() + "#" + item.getBook().getPrice() + "\n";
+                if (resultat.isSuccess())
+                {
+                    cartTableModel.setRowCount(0);
+                    for (String line : resultat.getMessage().split("\n")) {
+                        String[] parts = line.split("#", 4);
+                        if (parts.length >= 4)
+                        {
+
+                            Object[] row = {
+                                    parts[0], // ID
+                                    parts[1], // Titre
+                                    parts[2], // Quantité
+                                    parts[3], // Prix unitaire
+                                    /*Total (prix unitaire * quantité) à calculer*/
+                                    Float.parseFloat(parts[3]) * Float.parseFloat(parts[2])
+                            };
+                            cartTableModel.addRow(row);
+                        }
                     }
+
+                    //ajoute la ligne de fin avec que le total
+                    Object[] row = {
+                            "", // ID
+                            "", // Titre
+                            "", // Quantité
+                            "", // Prix unitaire
+                            caddyAmount// Total
+                    };
+                    cartTableModel.addRow(row);
                 }
+                else
+                {
+                    JOptionPane.showMessageDialog(this, "Erreur lors de la récupération du panier", "Erreur", JOptionPane.ERROR_MESSAGE);
+                }
+
+
             }
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(this, "Erreur de communication avec le serveur", "Erreur", JOptionPane.ERROR_MESSAGE);
+            /*else
+            {
+                JOptionPane.showMessageDialog(this, "Erreur lors de la récupération du panier", "Erreur", JOptionPane.ERROR_MESSAGE);
+            }*/
         }
+        catch (IOException ex)
+        {
+            JOptionPane.showMessageDialog(this, "Erreur lors de la récupération du panier", "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
+
     }
 
     public static void main(String[] args)

@@ -51,7 +51,8 @@ public class CaddyItemDAO {
             stmt.setInt(1, caddyId);
             ResultSet rs = stmt.executeQuery();
 
-            while (rs.next()) {
+            while (rs.next())
+            {
                 CaddyItem item = new CaddyItem();
                 item.setId(rs.getInt("id"));
                 item.setQuantity(rs.getInt("quantity"));

@@ -48,11 +48,11 @@ public class Prot_BSPP
                 return traiterRequeteAdd(response);
 
             case "GET_BOOKS":
-            //case "GET_CADDY":
             case "GET_AUTHORS":
             case "GET_SUBJECTS":
             case "GET_CADDY_ITEMS":
             case "GET_CLIENT":
+            case "GET_CADDY":
                 return traiterRequeteGet(response);
 
             default:
@@ -76,7 +76,8 @@ public class Prot_BSPP
         return resultat;
     }
 
-    private ResultatBSPP traiterRequeteGet(String response) {
+    private ResultatBSPP traiterRequeteGet(String response)
+    {
         ResultatBSPP resultat = new ResultatBSPP();
         String temp = response;
         System.out.println("temp=reponse : " + temp);
@@ -86,6 +87,7 @@ public class Prot_BSPP
         if(temp.contains("\n"))
         {
             parts = temp.split("\n", 2);
+
         }
         else
         {
@@ -94,6 +96,9 @@ public class Prot_BSPP
 
         String status = parts[0];
         String message = parts[1];
+
+        System.out.println("(traiterRequeteGet)status : " + status);
+        System.out.println("(traiterRequeteGet)message : " + message);
 
         resultat.setMessage(message);
         resultat.setSuccess("OK".equals(status));
@@ -183,20 +188,90 @@ public class Prot_BSPP
                 return "ADD_CLIENT#KO#Erreur lors de l'ajout du client";
             }
         }
-        else if(typeRequete.equals("GET_BOOKS"))//GET_BOOKS#author_id#subject_id#titre#prixMAx
+        else if (typeRequete.equals("GET_CLIENT"))
         {
+            parts = data.split("#");
+            String lastName = parts[0];
+            String firstName = parts[1];
+            System.out.println("(BSPP_Server_Parser)lastName : " + lastName);
+            System.out.println("(BSPP_Server_Parser)firstName : " + firstName);
+            ClientDAO clientDAO = new ClientDAO();
+            Client client = clientDAO.findByNomPrenom(lastName, firstName);
+            if(client != null)
+            {
+                return "GET_CLIENT#OK\n" + client.getId();
+            }
+            else
+            {
+                return "GET_CLIENT#KO#Client non trouvé";
+            }
+        }
+        else if(typeRequete.equals("GET_CADDY")) //GET_CADDY#client_id
+        {
+
+            String clientId = data.trim();
+            ClientDAO clientDAO = new ClientDAO();
+            Client client = clientDAO.findById(Integer.parseInt(clientId));
+            if(client == null)
+            {
+                return "GET_CADDY#KO#Panie du client " + clientId + " non trouvé";
+            }
+
+            CaddyDAO caddyDAO = new CaddyDAO();
+            Caddy caddy = caddyDAO.findActiveByClient(client);
+            if(caddy != null)
+            {
+                return "GET_CADDY#OK\n" + caddy.getId() + "#" + caddy.getDate() + "#" + caddy.getAmount() + "#" + caddy.getPayed();
+            }
+
+            return "GET_CADDY#KO#Panier non trouvé";
+        }
+
+        else if(typeRequete.equals("GET_BOOKS"))//GET_BOOKS#author_firstname author_lastname#subject_name#titre#prixMAx
+        {
+            System.out.println("(BSPP_Server_Parser)GET_BOOKS:data : " + data);
             Author author = new Author();
             AuthorDAO authorDAO = new AuthorDAO();
             BookDAO bookDAO = new BookDAO();
             parts= data.split("#", 4);
-            String author_id = parts[0];
-            String subject_id = parts[1];
+            String authorPrenom_Nom = parts[0];
+            String subjectName = parts[1];
             String titre = parts[2];
             String prixMax = parts[3];
-            if(author_id!="NULL")
+            System.out.println("(BSPP_Server_Parser)authorPrenom_Nom : " + authorPrenom_Nom);
+            System.out.println("(BSPP_Server_Parser)subjectName : " + subjectName);
+            System.out.println("(BSPP_Server_Parser)titre : " + titre);
+            System.out.println("(BSPP_Server_Parser)prixMax : " + prixMax);
+
+            if( authorPrenom_Nom.equals("NULL")==false)
             {
-                List<Book> ListBooks= bookDAO.findByAuthorId(Integer.parseInt(author_id));
-                if(ListBooks != null)
+                System.out.println("(BSPP_Server_Parser)authorPrenom_Nom derfrf: " + authorPrenom_Nom);
+                parts = authorPrenom_Nom.split(" ");
+                String author_firstname = parts[0];
+                String author_lastname = parts[1];
+                System.out.println("(BSPP_Server_Parser)author_firstname : " + author_firstname);
+                System.out.println("(BSPP_Server_Parser)author_lastname : " + author_lastname);
+                List<Book> ListBooks= bookDAO.findByAuthorLastNameFirstName(author_lastname, author_firstname);
+                if(!ListBooks.isEmpty())
+                {
+                    String books = "";
+                    for(Book book : ListBooks)
+                    {   //id#authorprenom + author nom#subjectName#title#isbn#pages#quantity#price#publicationDate
+                        books += book.getId()+"#"+book.getAuthor().getFirstName()+" "+book.getAuthor().getLastName()+"#"+book.getSubject().getName()+"#"+book.getTitle()+"#"+book.getIsbn()+"#"+book.getPageCount()+"#"+book.getStockQuantity()+"#"+book.getPrice()+"#"+book.getPublishYear()+"\n";
+                    }
+                    System.out.println("(BSPP_Server_Parser)books : " + books);
+                    return "GET_BOOKS#OK\n"+books;
+                }
+                else
+                {
+                    return "GET_BOOKS#KO#Livre non trouve";
+                }
+            }
+            else if (subjectName.equals("NULL")==false)
+            {
+                System.out.println("(BSPP_Server_Parser)rfjidsjfisrsubjectName : " + subjectName);
+                List<Book> ListBooks= bookDAO.findBySubjectName(subjectName);
+                if(ListBooks.isEmpty())
                 {
                     String books = "";
                     for(Book book : ListBooks)
@@ -207,30 +282,13 @@ public class Prot_BSPP
                 }
                 else
                 {
-                    return "GET_BOOKS#KO#Erreur lors de la recherche des livres";
+                    return "GET_BOOKS#KO#Livre non trouvé";
                 }
             }
-            else if (subject_id!="NULL")
-            {
-                List<Book> ListBooks= bookDAO.findBySubjectId(Integer.parseInt(subject_id));
-                if(ListBooks != null)
-                {
-                    String books = "";
-                    for(Book book : ListBooks)
-                    {   //id#authorprenom + author nom#subjectName#title#isbn#pages#quantity#price#publicationDate
-                        books += book.getId()+"#"+book.getAuthor().getFirstName()+" "+book.getAuthor().getLastName()+"#"+book.getSubject().getName()+"#"+book.getTitle()+"#"+book.getIsbn()+"#"+book.getPageCount()+"#"+book.getStockQuantity()+"#"+book.getPrice()+"#"+book.getPublishYear()+"\n";
-                    }
-                    return "GET_BOOKS#OK\n"+books;
-                }
-                else
-                {
-                    return "GET_BOOKS#KO#Erreur lors de la recherche des livres";
-                }
-            }
-            else if (titre!="NULL")
+            else if (titre.equals("NULL")==false)
             {
                 List<Book> ListBooks= bookDAO.findByTitle(titre);
-                if(ListBooks != null)
+                if(!ListBooks.isEmpty())
                 {
                     String books = "";
                     for(Book book : ListBooks)
@@ -241,24 +299,31 @@ public class Prot_BSPP
                 }
                 else
                 {
-                    return "GET_BOOKS#KO#Erreur lors de la recherche des livres";
+                    return "GET_BOOKS#KO#Livre non trouvé";
                 }
             }
-            else if (prixMax!="NULL")
+            else if (prixMax.equals("0.0")==false || !prixMax.equals("0")==false)
             {
                 List<Book> ListBooks = bookDAO.findByPrice(Float.parseFloat(prixMax));
-                if (ListBooks != null) {
+                if (!ListBooks.isEmpty())
+                {
                     String books = "";
-                    for (Book book : ListBooks) {   //id#authorprenom + author nom#subjectName#title#isbn#pages#quantity#price#publicationDate
+                    for (Book book : ListBooks)
+                    {   //id#authorprenom + author nom#subjectName#title#isbn#pages#quantity#price#publicationDate
                         books += book.getId() + "#" + book.getAuthor().getFirstName() + " " + book.getAuthor().getLastName() + "#" + book.getSubject().getName() + "#" + book.getTitle() + "#" + book.getIsbn() + "#" + book.getPageCount() + "#" + book.getStockQuantity() + "#" + book.getPrice() + "#" + book.getPublishYear() + "\n";
 
                     }
                     return "GET_BOOKS#OK\n" + books;
-                } else {
-                    return "GET_BOOKS#KO#Erreur lors de la recherche des livres";
+                }
+                else
+                {
+                    return "GET_BOOKS#KO#Livre non trouvé";
                 }
             }
-
+            else
+            {
+                return "GET_BOOKS#KO#Aucun livre ne correspond à votre recherche";
+            }
 
         }
         else if(typeRequete.equals("ADD_CADDY_ITEM")) //ADD_CADDY_ITEM#client_id#book_id#quantity
@@ -314,16 +379,36 @@ public class Prot_BSPP
 
             return "ADD_CADDY_ITEM#KO#Erreur lors de l'ajout au panier";
         }
+        else if(typeRequete.equals("GET_CADDY_ITEMS")) //GET_CADDY_ITEMS#client_id
+        {
+            int caddyId = Integer.parseInt(data);
+
+            CaddyItemDAO caddyItemDAO = new CaddyItemDAO();
+            List<CaddyItem> items = caddyItemDAO.findByCaddyId(caddyId);
+            if(items != null) {
+                String itemsList = "";
+                for(CaddyItem item : items) {
+                    itemsList += item.getId() + "#" + item.getBook().getTitle() + "#" + item.getQuantity() + "#" + item.getBook().getPrice() + "\n";
+                }
+                return "GET_CADDY_ITEMS#OK\n" + itemsList;
+            }
+
+            return "GET_CADDY_ITEMS#KO#Erreur lors de la recherche des items du panier";
+        }
 
         else if(typeRequete.equals("GET_AUTHORS")) //GET_AUTHORS
         {
+
             AuthorDAO authorDAO = new AuthorDAO();
             List<Author> authors = authorDAO.findAll();
-            if(authors != null) {
+            if(authors != null)
+            {
                 String authorsList = "";
-                for(Author author : authors) {
+                for(Author author : authors)
+                {
                     authorsList += author.getId() + "#" + author.getFirstName() + " " + author.getLastName() + "\n";
                 }
+                System.out.println("(BSPP_Server_Parser)authorsList : " + authorsList);
                 return "GET_AUTHORS#OK\n" + authorsList;
             }
 
@@ -343,78 +428,82 @@ public class Prot_BSPP
 
             return "GET_SUBJECTS#KO#Erreur lors de la recherche des sujets";
         }
-
-        else if(typeRequete.equals("DEL_CADDY_ITEM")) //DEL_CADDY_ITEM#caddy_id#item_id
+        else if(typeRequete.equals("DEL_CADDY_ITEM")) //DEL_CADDY_ITEM#item_id
         {
-            parts = data.split("#", 2);
-            int caddyId = Integer.parseInt(parts[0]);
-            int itemId = Integer.parseInt(parts[1]);
+
+            int itemId = Integer.parseInt(data.trim());
 
             CaddyItemDAO caddyItemDAO = new CaddyItemDAO();
             CaddyDAO caddyDAO = new CaddyDAO();
 
             // Récupérer l'item pour connaître son prix total
             CaddyItem item = caddyItemDAO.findById(itemId);
-            if(item != null) {
-                Caddy caddy = caddyDAO.findById(caddyId);
-                if(caddy != null) {
+            if(item != null)
+            {
+                Caddy caddy = caddyDAO.findById(item.getCaddy().getId());
+                if(caddy != null)
+                {
                     // Mettre à jour le montant du panier
                     float itemTotal = item.getBook().getPrice() * item.getQuantity();
                     caddy.setAmount(caddy.getAmount() - itemTotal);
 
-                    if(caddyItemDAO.delete(itemId)) {
+                    if(caddyItemDAO.delete(itemId))
+                    {
                         caddyDAO.update(caddy);
                         return "DEL_CADDY_ITEM#OK#Item supprimé du panier";
                     }
                 }
             }
-
             return "DEL_CADDY_ITEM#KO#Erreur lors de la suppression de l'item";
         }
 
-        else if (typeRequete.equals("CANCEL_CADDY")) //CANCEL_CADDY#caddy_id
+        else if (typeRequete.equals("CANCEL_CADDY")) //CANCEL_CADDY#Client_id
         {
-            int caddyId = Integer.parseInt(data);
+            int clientId = Integer.parseInt(data.trim());
 
             CaddyDAO caddyDAO = new CaddyDAO();
             CaddyItemDAO caddyItemDAO = new CaddyItemDAO();
 
-            // Supprimer tous les items du panier d'abord
-            if(caddyItemDAO.deleteByCaddyId(caddyId)) {
-                // Puis supprimer le panier
-                if(caddyDAO.delete(caddyId)) {
-                    return "CANCEL_CADDY#OK#Panier annulé";
+            ClientDAO clientDAO = new ClientDAO();
+            Client client = new Client();
+            client.setId(clientId);
+
+            Caddy caddy = caddyDAO.findActiveByClient(client);
+
+            if (caddy != null) {
+                if (caddyItemDAO.deleteByCaddyId(caddy.getId())) {
+                    if (caddyDAO.delete(caddy.getId())) {
+                        return "CANCEL_CADDY#OK#Panier annulé";
+                    } else {
+                        return "CANCEL_CADDY#KO#Erreur lors de l'annulation du panier";
+                    }
                 }
             }
 
             return "CANCEL_CADDY#KO#Erreur lors de l'annulation du panier";
         }
 
-        else if (typeRequete.equals("PAY_CADDY")) //PAY_CADDY#caddy_id
+        else if (typeRequete.equals("PAY_CADDY")) //PAY_CADDY#clientId
         {
-            int caddyId = Integer.parseInt(data);
+            int clientId = Integer.parseInt(data.trim());
 
             CaddyDAO caddyDAO = new CaddyDAO();
-            BookDAO bookDAO = new BookDAO();
+            CaddyItemDAO caddyItemDAO = new CaddyItemDAO();
 
-            Caddy caddy = caddyDAO.findById(caddyId);
-            if(caddy != null) {
-                // Mettre à jour les stocks
-                for(CaddyItem item : caddy.getItems()) {
-                    Book book = item.getBook();
-                    book.setStockQuantity(book.getStockQuantity() - item.getQuantity());
-                    if(!bookDAO.update(book)) {
-                        return "PAY_CADDY#KO#Erreur lors de la mise à jour des stocks";
-                    }
-                }
+            ClientDAO clientDAO = new ClientDAO();
+            Client client = new Client();
+            client.setId(clientId);
 
-                // Marquer le panier comme payé
+            Caddy caddy = caddyDAO.findActiveByClient(client);
+
+            if (caddy != null)
+            {
                 caddy.setPayed("Y");
-                if(caddyDAO.update(caddy)) {
+                if (caddyDAO.update(caddy))
+                {
                     return "PAY_CADDY#OK#Paiement effectué";
                 }
             }
-
             return "PAY_CADDY#KO#Erreur lors du paiement";
         }
 

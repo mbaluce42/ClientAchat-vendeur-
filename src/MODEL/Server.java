@@ -59,7 +59,8 @@ public class Server {
 
                     String response = bsppHandler.BSPP_Server_Parser(request); // Utiliser BSPP_Parser au lieu de parseRequest
                     System.out.println("Réponse : " + response);
-                    if (response != null) {
+                    if (response != null)
+                    {
                         byte[] responseData = response.getBytes();
                         SocketManager.sendData(socket, responseData, responseData.length);
                     }
@@ -95,7 +96,8 @@ public class Server {
         acceptClients();
     }
 
-    private static void initServer() {
+    private static void initServer()
+    {
         readConfig();
         try {
             serverSocket = SocketManager.createServerSocket(String.valueOf(PORT_PAYMENT));
