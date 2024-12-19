@@ -14,7 +14,8 @@ public class Author
         this.birthDate = birthDate;
     }
 
-    public Author() {
+    public Author()
+    {
 
     }
 
