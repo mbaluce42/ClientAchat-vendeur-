@@ -3,16 +3,16 @@ package ServeurGeneriqueTCP.requetes;
 public class RequeteGetBooks extends RequeteBSPP
 {
     private String titre;
-    private String authorName;
+    private String authorLastName;
     private String authorFirstName;
     private String subject;
     private Float maxPrice;
 
-    public RequeteGetBooks(String titre, String authorName, String authorFirstName, String subject, Float maxPrice)
+    public RequeteGetBooks(String titre, String authorLastName, String authorFirstName, String subject, Float maxPrice)
     {
         super("GET_BOOKS");
         this.titre = titre;
-        this.authorName = authorName;
+        this.authorLastName = authorLastName;
         this.authorFirstName = authorFirstName;
         this.subject = subject;
         this.maxPrice = maxPrice;
@@ -23,9 +23,9 @@ public class RequeteGetBooks extends RequeteBSPP
         return titre;
     }
 
-    public String getAuthorName()
+    public String getAuthorLastName()
     {
-        return authorName;
+        return authorLastName;
     }
 
     public String getAuthorFirstName()

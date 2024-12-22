@@ -16,7 +16,7 @@ import ServeurGeneriqueTCP.protocol.Reponse;
 
         case "CANCEL_CADDY"://reponse sera un boolean(status -> true ou false) + message
         case "PAY_CADDY": //reponse sera un boolean(status -> true ou false) + message
-        case "GET_CADDY": //recup le caddy d'un client -> par idclient
+        case "GET_CADDY": //reponse sera un boolean(status -> true ou false) + message + id + Date + Amount + Payed
 
      */
 public abstract class ReponseBSPP implements Reponse

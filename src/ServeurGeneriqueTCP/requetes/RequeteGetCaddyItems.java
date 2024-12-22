@@ -2,17 +2,17 @@ package ServeurGeneriqueTCP.requetes;
 
 public class RequeteGetCaddyItems extends RequeteBSPP
 {
-    int idClient;
+    int idCaddy;
 
-    public RequeteGetCaddyItems(int idClient)
+    public RequeteGetCaddyItems(int idCaddy)
     {
         super("GET_CADDY_ITEMS");
-        this.idClient = idClient;
+        this.idCaddy = idCaddy;
     }
 
-    public int getIdClient()
+    public int getIdCaddy()
     {
-        return idClient;
+        return idCaddy;
     }
 
 }
