@@ -8,7 +8,7 @@ public class RequeteGetBooks extends RequeteBSPP
     private String subject;
     private Float maxPrice;
 
-    public RequeteGetBooks(String titre, String authorLastName, String authorFirstName, String subject, Float maxPrice)
+    public RequeteGetBooks(String titre, String authorLastName, String authorFirstName, String subject, float maxPrice)
     {
         super("GET_BOOKS");
         this.titre = titre;

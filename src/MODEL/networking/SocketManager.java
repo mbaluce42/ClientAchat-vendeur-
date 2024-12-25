@@ -7,13 +7,6 @@ import java.util.Arrays;
 public class SocketManager {
     public static final int BUFFER_SIZE = 1500;
 
-    /**
-     * Creates a client socket and connects to the specified server.
-     * @param serverIp The server's IP address
-     * @param serverPort The server's port
-     * @return The connected socket
-     * @throws IOException If an I/O error occurs
-     */
     public static Socket createClientSocket(String serverIp, String serverPort) throws IOException
     {
         Socket clientSocket = null;
@@ -37,13 +30,6 @@ public class SocketManager {
         return serverSocket;
     }
 
-    /**
-     * Accepts a connection on a server socket and optionally retrieves client IP.
-     * @param serverSocket The server socket listening for connections
-     * @param clientIp StringBuilder to store client IP (can be null)
-     * @return The socket for the accepted connection
-     * @throws IOException If an I/O error occurs
-     */
     public static Socket acceptConnection(ServerSocket serverSocket, StringBuilder clientIp)
             throws IOException {
         Socket clientSocket = serverSocket.accept();
@@ -56,14 +42,6 @@ public class SocketManager {
         return clientSocket;
     }
 
-    /**
-     * Sends data through the socket.
-     * @param socket The socket to send data through
-     * @param data The data to send
-     * @param length The length of data to send
-     * @return The number of bytes sent
-     * @throws IOException If an I/O error occurs
-     */
     public static int sendData(Socket socket, byte[] data, int length) throws IOException {
         OutputStream out = socket.getOutputStream();
         out.write(data, 0, length);
@@ -71,12 +49,6 @@ public class SocketManager {
         return length;
     }
 
-    /**
-     * Receives data from the socket.
-     * @param socket The socket to receive data from
-     * @return The received data as byte array
-     * @throws IOException If an I/O error occurs
-     */
     public static byte[] receiveData(Socket socket) throws IOException
     {
         byte[] buffer = new byte[BUFFER_SIZE];
@@ -90,12 +62,26 @@ public class SocketManager {
         return Arrays.copyOf(buffer, bytesRead);
     }
 
+    public static void sendObject(Socket socket, Serializable object) throws IOException
+    {
+        ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+        out.writeObject(object);
+        out.flush();
+    }
+
+    public static Object receiveObject(Socket socket) throws IOException, ClassNotFoundException
+    {
+        ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+        return in.readObject();
+    }
+
+
     public static void main(String[] args)
     {
         //test socket
         //!!!!! mettre la bonne ip du serveurEncodage !!!!!!!
         Socket client = null;
-        try
+        /*try
         {
             client = SocketManager.createClientSocket("192.168.163.128", "50000");
             // Envoi/Réception
@@ -110,7 +96,26 @@ public class SocketManager {
         catch (IOException e)
         {
             throw new RuntimeException(e);
+        }*/
+
+        try {
+            client = SocketManager.createClientSocket("192.168.163.128", "50000");
+
+            // Envoi d'un objet
+            String testObject = "Hello, Server!";
+            SocketManager.sendObject(client, testObject);
+
+            // Réception d'un objet
+            Object receivedObject = SocketManager.receiveObject(client);
+            if (receivedObject instanceof String)
+            {
+                System.out.println("Message reçu (Objet) : " + receivedObject);
+            }
         }
+        catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
 
     }
 

@@ -72,49 +72,4 @@ public class ThreadServeurPool extends ThreadServeur
         logger.Trace("TH Serveur (Pool) interrompu.");
         pool.interrupt();
     }
-
-    public static void main(String[] args)
-    {
-        Logger logger = new Logger() {
-            @Override
-            public void Trace(String message)
-            {
-                System.out.println("SERVER: " + message);
-            }
-        };
-        Protocole protocole = new Prot_BSPPnew(logger);
-        ThreadServeurPool serveur = null;
-
-        //serveur.readConfig();
-        try
-        {
-            serveur = new ThreadServeurPool(50001, protocole, 2, logger);
-        }
-        catch(IOException ex)
-        {
-            logger.Trace("Erreur lors de la création du serveur: " + ex.getMessage());
-            throw new RuntimeException("Erreur lors de la création du serveur: " + ex.getMessage());
-            //System.exit(1);
-        }
-
-        serveur.start();
-
-        while (true)
-        {
-            System.out.println("Appuyez sur 'q' pour quitter...");
-            try
-            {
-                if (System.in.read() == 'q')
-                {
-                    serveur.interrupt();
-                    break;
-                }
-            }
-            catch(IOException ex)
-            {
-                logger.Trace("Erreur I/O: " + ex.getMessage());
-            }
-        }
-
-    }
 }

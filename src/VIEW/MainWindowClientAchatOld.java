@@ -1,30 +1,15 @@
 package VIEW;
 
-import MODEL.entity.Author;
-import MODEL.entity.CaddyItem;
-import MODEL.entity.Subject;
 import MODEL.networking.Prot_BSPP;
 import MODEL.networking.ResultatBSPP;
-import MODEL.entity.Book;
 import MODEL.networking.SocketManager;
-
-import MODEL.networking.Prot_BSPPnew;
-import ServeurGeneriqueTCP.protocol.Reponse;
-import ServeurGeneriqueTCP.protocol.Requete;
-import ServeurGeneriqueTCP.reponses.*;
-import ServeurGeneriqueTCP.requetes.*;
-
-
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.List;
 
-
-public class MainWindowClientAchat extends JFrame
+public class MainWindowClientAchatOld extends JFrame
 {
     private JPanel mainPanel;
     private JTextField nomField, prenomField, clientIdField, titreField;
@@ -44,10 +29,10 @@ public class MainWindowClientAchat extends JFrame
     private DefaultTableModel cartTableModel;
 
     private Socket clientSocket;
-    private Prot_BSPPnew protocol;
+    private Prot_BSPP protocol;
     private String clientId = null;
 
-    public MainWindowClientAchat()
+    public MainWindowClientAchatOld()
     {
         setTitle("Application Achat");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -74,7 +59,7 @@ public class MainWindowClientAchat extends JFrame
         // Connexion au serveur
         try {
             clientSocket = SocketManager.createClientSocket("localhost", "50001"); // PORT_PAYMENT
-            protocol = new Prot_BSPPnew(clientSocket);
+            protocol = new Prot_BSPP(clientSocket);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Erreur de connexion au serveur", "Erreur", JOptionPane.ERROR_MESSAGE);
             System.exit(1);
@@ -97,8 +82,7 @@ public class MainWindowClientAchat extends JFrame
         booksTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     }
 
-    private void setupCartTable()
-    {
+    private void setupCartTable() {
         String[] columns = {"ID", "Titre", "Quantité", "Prix unitaire", "Total"};
         cartTableModel = new DefaultTableModel(columns, 0) {
             @Override
@@ -157,48 +141,33 @@ public class MainWindowClientAchat extends JFrame
             String nom = nomField.getText().trim();
             String prenom = prenomField.getText().trim();
 
-            if (nom.isEmpty() || prenom.isEmpty())
-            {
+            if (nom.isEmpty() || prenom.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Veuillez remplir tous les champs", "Erreur", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            if (nouveauClientCheckBox.isSelected())
-            {
+            if (nouveauClientCheckBox.isSelected()) {
                 // Créer un nouveau client
                 String telephone = JOptionPane.showInputDialog(this, "Numéro de téléphone :");
                 String adresse = JOptionPane.showInputDialog(this, "Adresse :");
                 String email = JOptionPane.showInputDialog(this, "Email :");
 
-                RequeteAddClient reqAddClient=new RequeteAddClient(nom,prenom,telephone,adresse,email);
-                ReponseAddClient repAddClient=(ReponseAddClient)protocol.echangeObject(reqAddClient);
-
-                if (repAddClient.isSuccess())
-                {
-                    clientId = String.valueOf(repAddClient.getIdClient());
+                ResultatBSPP resultat = protocol.BSPP_Client_Op("ADD_CLIENT#" + nom + "#" + prenom + "#" + telephone + "#" + adresse + "#" + email);
+                if (resultat.isSuccess()) {
+                    clientId = resultat.getMessage();
                     JOptionPane.showMessageDialog(this, "Client créé avec succès", "Succès", JOptionPane.INFORMATION_MESSAGE);
-                }
-                else
-                {
-                    JOptionPane.showMessageDialog(this, "Erreur: " + repAddClient.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Erreur: " + resultat.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-            }
-            else
-            {
+            } else {
                 // Vérifier si le client existe
-                RequeteGetClient reqGetClient=new RequeteGetClient(nom,prenom);
-                ReponseGetClient repGetClient=(ReponseGetClient)protocol.echangeObject(reqGetClient);
-
-                if (repGetClient.isSuccess())
-                {
-                    clientId = String.valueOf(repGetClient.getIdClient());
-                }
-                else
-                {
+                ResultatBSPP resultat = protocol.BSPP_Client_Op("GET_CLIENT#" + nom + "#" + prenom);
+                if (!resultat.isSuccess()) {
                     JOptionPane.showMessageDialog(this, "Client non trouvé", "Erreur", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
+                clientId = resultat.getMessage();
             }
 
             // Activer les contrôles de recherche et panier
@@ -218,84 +187,26 @@ public class MainWindowClientAchat extends JFrame
             loadSubjectsList();
             updateCartTable();
 
-        } catch (IOException | ClassNotFoundException ex) {
-            System.out.println("OK CHEF");
+        } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Erreur de communication avec le serveur", "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void handleSearch()
-    {
-        try
-        {
-            //verif chaque champs si il y a quelque chose dedans
-            RequeteGetBooks reqGetBooks;
-            ReponseGetBooks repGetBooks;
-
-            if(!titreField.getText().isEmpty())
+    private void handleSearch() {
+        try {
+            String searchInfo = buildSearchInfoBook();
+            System.out.println("Search info: " + searchInfo);
+            ResultatBSPP resultat = protocol.BSPP_Client_Op("GET_BOOKS#" + searchInfo);
+            System.out.println("(handleSearch()): "+resultat.getMessage());
+            if (resultat.isSuccess())
             {
-                reqGetBooks=new RequeteGetBooks(titreField.getText(),"NULL","NULL","NULL", 0);
-                repGetBooks=(ReponseGetBooks)protocol.echangeObject(reqGetBooks);
-
-                if (repGetBooks.isSuccess())
-                {
-                    updateBooksTable(repGetBooks.getBooks());
-                }
-                else
-                {
-                    JOptionPane.showMessageDialog(this, "Erreur: " + repGetBooks.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-            if (auteurCombo.getSelectedItem() !=null && !auteurCombo.getSelectedItem().toString().equals("NULL"))
-            {
-                String firstName=auteurCombo.getSelectedItem().toString().split(" ")[0];
-                String lastName=auteurCombo.getSelectedItem().toString().split(" ")[1];
-
-                reqGetBooks=new RequeteGetBooks("NULL",firstName,lastName,"NULL", 0);
-                repGetBooks=(ReponseGetBooks)protocol.echangeObject(reqGetBooks);
-
-                if (repGetBooks.isSuccess())
-                {
-                    updateBooksTable(repGetBooks.getBooks());
-                }
-                else
-                {
-                    JOptionPane.showMessageDialog(this, "Erreur: " + repGetBooks.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-            else if(sujetCombo.getSelectedItem() !=null && !sujetCombo.getSelectedItem().toString().equals("NULL"))
-            {
-                reqGetBooks=new RequeteGetBooks("NULL","NULL","NULL",sujetCombo.getSelectedItem().toString(), 0);
-                repGetBooks=(ReponseGetBooks)protocol.echangeObject(reqGetBooks);
-
-                if (repGetBooks.isSuccess())
-                {
-                    updateBooksTable(repGetBooks.getBooks());
-                }
-                else
-                {
-                    JOptionPane.showMessageDialog(this, "Erreur: " + repGetBooks.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-            else if ((float)prixMaxSpinner.getValue() != 0)
-            {
-                reqGetBooks=new RequeteGetBooks("NULL","NULL","NULL","NULL", (float)prixMaxSpinner.getValue());
-                repGetBooks=(ReponseGetBooks)protocol.echangeObject(reqGetBooks);
-
-                if (repGetBooks.isSuccess())
-                {
-                    updateBooksTable(repGetBooks.getBooks());
-                }
-                else
-                {
-                    JOptionPane.showMessageDialog(this, "Erreur: " + repGetBooks.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-                }
+                updateBooksTable(resultat.getMessage());
             }
             else
             {
-                JOptionPane.showMessageDialog(this, "Veuillez remplir au moins un champ", "Erreur", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Erreur: " + resultat.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
             }
-        } catch (IOException | ClassNotFoundException ex) {
+        } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Erreur de communication avec le serveur", "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -338,10 +249,8 @@ public class MainWindowClientAchat extends JFrame
                 return;
             }
 
-            RequeteAddCaddyItem reqAddCaddyItem=new RequeteAddCaddyItem(Integer.parseInt(clientId),Integer.parseInt(bookId),quantity);
-            ReponseAddCaddyItem repAddCaddyItem=(ReponseAddCaddyItem)protocol.echangeObject(reqAddCaddyItem);
-
-            if (repAddCaddyItem.isSuccess())
+            ResultatBSPP resultat = protocol.BSPP_Client_Op("ADD_CADDY_ITEM#" + clientId + "#" + bookId + "#" + quantity);
+            if (resultat.isSuccess())
             {
                 updateCartTable();
                 // Mettre à jour le stock dans la table des livres
@@ -349,9 +258,9 @@ public class MainWindowClientAchat extends JFrame
             }
             else
             {
-                JOptionPane.showMessageDialog(this, "Erreur: " + repAddCaddyItem.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Erreur: " + resultat.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
             }
-        } catch (IOException | ClassNotFoundException ex) {
+        } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Erreur de communication avec le serveur", "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -374,10 +283,8 @@ public class MainWindowClientAchat extends JFrame
             String itemId = cartTable.getValueAt(selectedRow, 0).toString();
             int quantity = Integer.parseInt(cartTable.getValueAt(selectedRow, 2).toString());
 
-            RequeteDelCaddyItem reqDelCaddyItem=new RequeteDelCaddyItem(Integer.parseInt(itemId));
-            ReponseDelCaddyItem repDelCaddyItem=(ReponseDelCaddyItem)protocol.echangeObject(reqDelCaddyItem);
-
-            if (repDelCaddyItem.isSuccess())
+            ResultatBSPP resultat = protocol.BSPP_Client_Op("DEL_CADDY_ITEM#" + itemId);
+            if (resultat.isSuccess())
             {
                 // Mettre à jour l'affichage du panier
                 updateCartTable();
@@ -390,13 +297,11 @@ public class MainWindowClientAchat extends JFrame
             else
             {
                 JOptionPane.showMessageDialog(this,
-                        "Erreur: " + repDelCaddyItem.getMessage(),
+                        "Erreur: " + resultat.getMessage(),
                         "Erreur",
                         JOptionPane.ERROR_MESSAGE);
             }
-
-
-        } catch (ClassNotFoundException | IOException ex) {
+        } catch (IOException ex) {
             JOptionPane.showMessageDialog(this,
                     "Erreur de communication avec le serveur",
                     "Erreur",
@@ -415,11 +320,28 @@ public class MainWindowClientAchat extends JFrame
         {
             try
             {
-                RequeteCancelCaddy reqCancelCaddy=new RequeteCancelCaddy(Integer.parseInt(clientId));
-                ReponseCancelCaddy repCancelCaddy=(ReponseCancelCaddy)protocol.echangeObject(reqCancelCaddy);
-
-                if (repCancelCaddy.isSuccess())
+                ResultatBSPP resultat = protocol.BSPP_Client_Op("CANCEL_CADDY#" + clientId);
+                if (resultat.isSuccess())
                 {
+                    // Remettre à jour les stocks dans la table des livres
+                    /*for (int i = 0; i < cartTableModel.getRowCount(); i++)
+                    {
+                        String itemId = cartTableModel.getValueAt(i, 0).toString();
+                        int quantity = Integer.parseInt(cartTableModel.getValueAt(i, 2).toString());
+
+                        // Mettre à jour le stock dans la table des livres
+                        for (int j = 0; j < booksTableModel.getRowCount(); j++)
+                        {
+                            if (booksTableModel.getValueAt(j, 0).toString().equals(itemId))
+                            {
+                                int currentStock = Integer.parseInt(booksTableModel.getValueAt(j, 5).toString());
+                                booksTableModel.setValueAt(currentStock + quantity, j, 5);
+                                break;
+                            }
+                        }
+                    }*/
+
+
                     // Vider la table du panier
                     cartTableModel.setRowCount(0);
 
@@ -431,11 +353,11 @@ public class MainWindowClientAchat extends JFrame
                 else
                 {
                     JOptionPane.showMessageDialog(this,
-                            "Erreur: " + repCancelCaddy.getMessage(),
+                            "Erreur: " + resultat.getMessage(),
                             "Erreur",
                             JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (IOException | ClassNotFoundException ex) {
+            } catch (IOException ex) {
                 JOptionPane.showMessageDialog(this,
                         "Erreur de communication avec le serveur",
                         "Erreur",
@@ -471,15 +393,13 @@ public class MainWindowClientAchat extends JFrame
         {
             try
             {
-                RequetePayCaddy reqPayCaddy=new RequetePayCaddy(Integer.parseInt(clientId));
-                ReponsePayCaddy repPayCaddy=(ReponsePayCaddy)protocol.echangeObject(reqPayCaddy);
-
-                if (repPayCaddy.isSuccess())
+                ResultatBSPP resultat = protocol.BSPP_Client_Op("PAY_CADDY#" + clientId);
+                if (resultat.isSuccess())
                 {
                     JOptionPane.showMessageDialog(this,
-                    repPayCaddy.getMessage(),
-                    "Succès",
-                    JOptionPane.INFORMATION_MESSAGE);
+                            "Paiement effectué avec succès",
+                            "Succès",
+                            JOptionPane.INFORMATION_MESSAGE);
 
                     // Après le paiement, réinitialiser pour un nouveau client
                     resetForNewClient();
@@ -487,11 +407,11 @@ public class MainWindowClientAchat extends JFrame
                 else
                 {
                     JOptionPane.showMessageDialog(this,
-                            "Erreur: " + repPayCaddy.getMessage(),
+                            "Erreur: " + resultat.getMessage(),
                             "Erreur",
                             JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (IOException | ClassNotFoundException ex) {
+            } catch (IOException ex) {
                 JOptionPane.showMessageDialog(this,
                         "Erreur de communication avec le serveur",
                         "Erreur",
@@ -562,25 +482,25 @@ public class MainWindowClientAchat extends JFrame
 
     private void loadAuthorsList()
     {
-        try
-        {
-            RequeteGetAuthors reqGetAuthors=new RequeteGetAuthors();
-            ReponseGetAuthors repGetAuthors=(ReponseGetAuthors)protocol.echangeObject(reqGetAuthors);
-
-            if(repGetAuthors.isSuccess())
+        try {
+            ResultatBSPP resultat = protocol.BSPP_Client_Op("GET_AUTHORS#");
+            System.out.println("(loadAuthorsList()): "+resultat.getMessage());
+            if (resultat.isSuccess())
             {
                 auteurCombo.removeAllItems();
                 auteurCombo.addItem("NULL"); // Option par défaut
-                for (Author author: repGetAuthors.getAuthors())
+                for (String line : resultat.getMessage().split("\n") )
                 {
-                    auteurCombo.addItem(author.getFirstName() + " " + author.getLastName());
+                    String[] parts = line.split("#",2);
+                    String id = parts[0];
+                    String prenom_nom = parts[1];
+                    System.out.println("(loadAuthorsList()) part[0] "+id);
+                    System.out.println("(loadAuthorsList()) part[1] "+prenom_nom);
+
+                    auteurCombo.addItem(prenom_nom); // prénom + nom
                 }
             }
-            else
-            {
-                JOptionPane.showMessageDialog(this, repGetAuthors.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (IOException | ClassNotFoundException ex) {
+        } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Erreur lors du chargement des auteurs", "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -588,25 +508,21 @@ public class MainWindowClientAchat extends JFrame
     private void loadSubjectsList()
     {
         try {
-
-            RequeteGetSubjects reqGetSubjects=new RequeteGetSubjects();
-            ReponseGetSubjects repGetSubjects=(ReponseGetSubjects)protocol.echangeObject(reqGetSubjects);
-
-            if(repGetSubjects.isSuccess())
+            ResultatBSPP resultat = protocol.BSPP_Client_Op("GET_SUBJECTS#");
+            if (resultat.isSuccess())
             {
                 sujetCombo.removeAllItems();
                 sujetCombo.addItem("NULL"); // Option par défaut
-                for (Subject subject: repGetSubjects.getSubjects())
+                for (String line : resultat.getMessage().split("\n"))
                 {
-                    sujetCombo.addItem(subject.getName());
+                    String[] parts = line.split("#");
+                    String id = parts[0];
+                    String nom = parts[1];
+
+                    sujetCombo.addItem(nom);
                 }
             }
-            else
-            {
-                JOptionPane.showMessageDialog(this, repGetSubjects.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
-            }
-
-        } catch (IOException | ClassNotFoundException ex) {
+        } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Erreur lors du chargement des sujets", "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -638,51 +554,38 @@ public class MainWindowClientAchat extends JFrame
         }
     }
 
-    private void updateBooksTable(List<Book> books)
-    {
-        booksTableModel.setRowCount(0);
-        for (Book book : books)
-        {
-            Object[] row = {
-                    String.valueOf(book.getId()),
-                    book.getTitle(),
-                    book.getAuthor().getFirstName() + " " + book.getAuthor().getLastName(),
-                    book.getSubject().getName(),
-                    book.getIsbn(),
-                    String.valueOf(book.getPageCount()),
-                    String.valueOf(book.getStockQuantity()),
-                    String.valueOf(book.getPrice()),
-                    String.valueOf(book.getPublishYear())
-            };
-            booksTableModel.addRow(row);
-        }
-    }
-
     private void updateCartTable()
     {
         try
         {
-            RequeteGetCaddy reqGetCaddy=new RequeteGetCaddy(Integer.parseInt(clientId));
-            ReponseGetCaddy repGetCaddy=(ReponseGetCaddy)protocol.echangeObject(reqGetCaddy);
-
-            if (repGetCaddy.isSuccess())
+            ResultatBSPP resultat = protocol.BSPP_Client_Op("GET_CADDY#" + clientId); //"GET_CADDY#OK\n" + caddy.getId() + "#" + caddy.getDate() + "#" + caddy.getAmount() + "#" + caddy.getPayed();
+            if (resultat.isSuccess())
             {
-                RequeteGetCaddyItems reqGetCaddyItems=new RequeteGetCaddyItems(repGetCaddy.getIdCaddy());
-                ReponseGetCaddyItems repGetCaddyItems=(ReponseGetCaddyItems)protocol.echangeObject(reqGetCaddyItems);
+                String[] lines = resultat.getMessage().split("#",4);
+                String caddyId = lines[0];
+                String caddyDate = lines[1];
+                String caddyAmount = lines[2];
+                String caddyPayed = lines[3];
 
-                if (repGetCaddyItems.isSuccess())
+                resultat=protocol.BSPP_Client_Op("GET_CADDY_ITEMS#" + caddyId);//GET_CADDY_ITEMS#\n item.getId() + "#" + item.getBook().getTitle() + "#" + item.getQuantity() + "#" + item.getBook().getPrice() + "\n";
+                if (resultat.isSuccess())
                 {
                     cartTableModel.setRowCount(0);
-                    for (CaddyItem caddyItem : repGetCaddyItems.getItems())
-                    {
-                        Object[] row = {
-                                caddyItem.getId(), // ID
-                                caddyItem.getBook().getTitle(), // Titre
-                                caddyItem.getQuantity(), // Quantité
-                                caddyItem.getBook().getPrice(), // Prix unitaire
-                                caddyItem.getBook().getPrice() * caddyItem.getQuantity() // Total
-                        };
-                        cartTableModel.addRow(row);
+                    for (String line : resultat.getMessage().split("\n")) {
+                        String[] parts = line.split("#", 4);
+                        if (parts.length >= 4)
+                        {
+
+                            Object[] row = {
+                                    parts[0], // ID
+                                    parts[1], // Titre
+                                    parts[2], // Quantité
+                                    parts[3], // Prix unitaire
+                                    /*Total (prix unitaire * quantité) à calculer*/
+                                    Float.parseFloat(parts[3]) * Float.parseFloat(parts[2])
+                            };
+                            cartTableModel.addRow(row);
+                        }
                     }
 
                     //ajoute la ligne de fin avec que le total
@@ -691,7 +594,7 @@ public class MainWindowClientAchat extends JFrame
                             "", // Titre
                             "", // Quantité
                             "", // Prix unitaire
-                            repGetCaddy.getAmount()// Total
+                            caddyAmount// Total
                     };
                     cartTableModel.addRow(row);
                 }
@@ -699,14 +602,15 @@ public class MainWindowClientAchat extends JFrame
                 {
                     JOptionPane.showMessageDialog(this, "Erreur lors de la récupération du panier", "Erreur", JOptionPane.ERROR_MESSAGE);
                 }
-            }
 
+
+            }
             /*else
             {
                 JOptionPane.showMessageDialog(this, "Erreur lors de la récupération du panier", "Erreur", JOptionPane.ERROR_MESSAGE);
             }*/
         }
-        catch (IOException | ClassNotFoundException ex)
+        catch (IOException ex)
         {
             JOptionPane.showMessageDialog(this, "Erreur lors de la récupération du panier", "Erreur", JOptionPane.ERROR_MESSAGE);
         }
@@ -715,6 +619,6 @@ public class MainWindowClientAchat extends JFrame
 
     public static void main(String[] args)
     {
-        MainWindowClientAchat frame = new MainWindowClientAchat();
+        MainWindowClientAchatOld frame = new MainWindowClientAchatOld();
     }
 }

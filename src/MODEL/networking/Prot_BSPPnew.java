@@ -11,6 +11,9 @@ import ServeurGeneriqueTCP.requetes.*;
 import ServeurGeneriqueTCP.utils.Logger;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -21,10 +24,15 @@ public class Prot_BSPPnew implements Protocole
     private static final String PROTOCOL_NAME = "BSPP";
     private Logger logger;
     private Socket clientSocket;
+    private Socket clientSocket1;
 
     public Prot_BSPPnew(Logger logger)
     {
         this.logger = logger;
+    }
+    public Prot_BSPPnew(Socket clientSocket1)
+    {
+        this.clientSocket1 = clientSocket1;
     }
 
     @Override
@@ -34,7 +42,7 @@ public class Prot_BSPPnew implements Protocole
     }
 
     @Override
-    public Reponse TraiteRequete(Requete requete, Socket socket) throws FinConnexionException
+    public synchronized Reponse TraiteRequete(Requete requete, Socket socket) throws FinConnexionException
     {
         RequeteBSPP req = (RequeteBSPP) requete;
         String type = req.getType();
@@ -391,6 +399,27 @@ public class Prot_BSPPnew implements Protocole
         return new ReponsePayCaddy(false, "Erreur lors du paiement");
 
     }
+
+    public Object echangeObject(Object requete) throws IOException, ClassNotFoundException
+    {
+        try {
+            // Envoi de l'objet request
+            SocketManager.sendObject(clientSocket1, (Serializable) requete);
+
+            // Réception de la réponse sous forme d'objet
+            Object reponse = SocketManager.receiveObject(clientSocket1);
+
+            // Retour de l'objet reçu
+            return reponse;
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Erreur lors de l'échange d'objets : " + e.getMessage());
+            throw e;
+        }
+    }
+
+
+
+
 
 
     //client vers serveur
