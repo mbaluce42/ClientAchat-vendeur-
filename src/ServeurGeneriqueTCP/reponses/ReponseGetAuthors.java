@@ -2,6 +2,8 @@ package ServeurGeneriqueTCP.reponses;
 
 import MODEL.entity.Author;
 
+import java.awt.*;
+import java.io.Serializable;
 import java.util.List;
 
 public class ReponseGetAuthors extends ReponseBSPP

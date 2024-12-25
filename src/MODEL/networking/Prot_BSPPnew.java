@@ -400,11 +400,10 @@ public class Prot_BSPPnew implements Protocole
 
     }
 
-    public Object echangeObject(Object requete) throws IOException, ClassNotFoundException
-    {
+    public Object echangeObject(Serializable object ) throws IOException, ClassNotFoundException {
         try {
             // Envoi de l'objet request
-            SocketManager.sendObject(clientSocket1, (Serializable) requete);
+            SocketManager.sendObject(clientSocket1,object);
 
             // Réception de la réponse sous forme d'objet
             Object reponse = SocketManager.receiveObject(clientSocket1);
@@ -413,6 +412,7 @@ public class Prot_BSPPnew implements Protocole
             return reponse;
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("Erreur lors de l'échange d'objets : " + e.getMessage());
+            e.printStackTrace();  // Ajout de cette ligne pour voir la trace de l'exception
             throw e;
         }
     }

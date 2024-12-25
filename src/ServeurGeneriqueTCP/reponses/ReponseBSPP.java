@@ -2,6 +2,8 @@ package ServeurGeneriqueTCP.reponses;
 
 import ServeurGeneriqueTCP.protocol.Reponse;
 
+import java.io.Serializable;
+
 /*
         case "ADD_CLIENT": //reponse sera un boolean(status -> true ou false) + message + idClient
         case "GET_CLIENT": //reponse sera un boolean(status -> true ou false) + message + idClient
@@ -19,7 +21,7 @@ import ServeurGeneriqueTCP.protocol.Reponse;
         case "GET_CADDY": //reponse sera un boolean(status -> true ou false) + message + id + Date + Amount + Payed
 
      */
-public abstract class ReponseBSPP implements Reponse
+public abstract class ReponseBSPP implements Reponse, Serializable
 {
     private boolean success;
     private String message;

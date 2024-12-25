@@ -188,6 +188,12 @@ public class MainWindowClientAchat extends JFrame
             {
                 // Vérifier si le client existe
                 RequeteGetClient reqGetClient=new RequeteGetClient(nom,prenom);
+                /*SocketManager.sendObject(clientSocket, reqGetClient);
+
+                // Réception d'un objet
+                Object receivedObject = SocketManager.receiveObject(clientSocket);
+                ReponseGetClient repGetClient = (ReponseGetClient) receivedObject;*/
+
                 ReponseGetClient repGetClient=(ReponseGetClient)protocol.echangeObject(reqGetClient);
 
                 if (repGetClient.isSuccess())
@@ -565,7 +571,13 @@ public class MainWindowClientAchat extends JFrame
         try
         {
             RequeteGetAuthors reqGetAuthors=new RequeteGetAuthors();
-            ReponseGetAuthors repGetAuthors=(ReponseGetAuthors)protocol.echangeObject(reqGetAuthors);
+            SocketManager.sendObject(clientSocket, reqGetAuthors);
+
+            // Réception d'un objet
+            Object receivedObject = SocketManager.receiveObject(clientSocket);
+            ReponseGetAuthors repGetAuthors = (ReponseGetAuthors) receivedObject;
+
+            //ReponseGetAuthors repGetAuthors=(ReponseGetAuthors)protocol.echangeObject(reqGetAuthors);
 
             if(repGetAuthors.isSuccess())
             {

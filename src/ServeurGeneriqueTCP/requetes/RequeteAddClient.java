@@ -1,6 +1,8 @@
 package ServeurGeneriqueTCP.requetes;
 
 
+import java.io.Serializable;
+
 public class RequeteAddClient extends RequeteBSPP
 {
     private String nom;

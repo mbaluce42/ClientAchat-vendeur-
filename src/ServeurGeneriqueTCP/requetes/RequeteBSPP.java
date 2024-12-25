@@ -1,6 +1,9 @@
 package ServeurGeneriqueTCP.requetes;
 
 import ServeurGeneriqueTCP.protocol.Requete;
+
+import java.io.Serializable;
+
 /*
         case "ADD_CLIENT": //permet d'ajouter un client
         case "GET_CLIENT": //recup un client specifique -> par nom, par prenom, par id
@@ -18,7 +21,7 @@ import ServeurGeneriqueTCP.protocol.Requete;
         case "GET_CADDY": //recup le caddy d'un client -> par idclient
 
      */
-public abstract class RequeteBSPP implements Requete
+public abstract class RequeteBSPP implements Requete, Serializable
 {
     private String type;//type de la requete (ADD_CLIENT, ADD_CADDY_ITEM, DEL_CADDY_ITEM, CANCEL_CADDY, PAY_CADDY, GET_BOOKS, GET_AUTHORS, GET_SUBJECTS, GET_CADDY_ITEMS, GET_CLIENT, GET_CADDY)
 

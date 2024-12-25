@@ -6,6 +6,38 @@ import java.util.Arrays;
 
 public class SocketManager {
     public static final int BUFFER_SIZE = 1500;
+    private static ObjectOutputStream out;
+    private static ObjectInputStream in;
+
+    public static void initializeStreams(Socket socket) throws IOException {
+        if (out == null || in == null) {
+            out = new ObjectOutputStream(socket.getOutputStream());
+            in = new ObjectInputStream(socket.getInputStream());
+        }
+    }
+
+    public static void sendObject(Socket socket, Serializable object) throws IOException {
+        if (out == null || socket.isClosed()) {
+            initializeStreams(socket);
+        }
+        out.writeObject(object);
+        out.flush();
+    }
+
+    public static Object receiveObject(Socket socket) throws IOException, ClassNotFoundException {
+        if (in == null || socket.isClosed()) {
+            initializeStreams(socket);
+        }
+        return in.readObject();
+    }
+
+    public static void close(Socket socket) throws IOException {
+        if (in != null) in.close();
+        if (out != null) out.close();
+        if (socket != null && !socket.isClosed()) {
+            socket.close();
+        }
+    }
 
     public static Socket createClientSocket(String serverIp, String serverPort) throws IOException
     {
@@ -62,7 +94,7 @@ public class SocketManager {
         return Arrays.copyOf(buffer, bytesRead);
     }
 
-    public static void sendObject(Socket socket, Serializable object) throws IOException
+    /*public static void sendObject(Socket socket, Serializable object) throws IOException
     {
         ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
         out.writeObject(object);
@@ -73,7 +105,8 @@ public class SocketManager {
     {
         ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
         return in.readObject();
-    }
+    }*/
+
 
 
     public static void main(String[] args)
@@ -99,7 +132,7 @@ public class SocketManager {
         }*/
 
         try {
-            client = SocketManager.createClientSocket("192.168.163.128", "50000");
+            client = SocketManager.createClientSocket("localhost", "50001");
 
             // Envoi d'un objet
             String testObject = "Hello, Server!";
