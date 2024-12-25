@@ -2,8 +2,8 @@ package ServeurGeneriqueTCP.requetes;
 
 public class RequeteGetClient extends RequeteBSPP
 {
-    String nom;
-    String prenom;
+    private String nom;
+    private String prenom;
 
     public RequeteGetClient(String nom, String prenom)
     {

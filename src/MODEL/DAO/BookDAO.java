@@ -256,11 +256,11 @@ public class BookDAO
     public List<Book> findByTitle(String title)
     {
         List<Book> books = new ArrayList<>();
-        String sql = "SELECT * FROM books WHERE title = ?";
+        String sql = "SELECT * FROM books WHERE title LIKE ?";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql))
         {
-            stmt.setString(1, title);
+            stmt.setString(1, "%" + title + "%");
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next())
@@ -366,7 +366,7 @@ public class BookDAO
     public List<Book> findByPrice(float price)
     {
         List<Book> books = new ArrayList<>();
-        String sql = "SELECT * FROM books WHERE price = ?";
+        String sql = "SELECT * FROM books WHERE price <= ?";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql))
         {

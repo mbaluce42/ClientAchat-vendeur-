@@ -1,5 +1,5 @@
 
-import MODEL.networking.Prot_BSPPnew;
+import MODEL.networking.Prot_BSPP;
 import ServeurGeneriqueTCP.protocol.Protocole;
 import ServeurGeneriqueTCP.serveur.ThreadServeur;
 import ServeurGeneriqueTCP.serveur.ThreadServeurPool;
@@ -37,7 +37,7 @@ public class MainServeur
         try
         {
             // Création du protocole
-            Protocole protocole = new Prot_BSPPnew(logger);
+            Protocole protocole = new Prot_BSPP(logger);
 
 
             // Création du serveur -> mode pool ou mode à la demande

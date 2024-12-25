@@ -1,16 +1,11 @@
 package ServeurGeneriqueTCP.serveur;
 
-import MODEL.networking.Prot_BSPPnew;
 import ServeurGeneriqueTCP.client.ThreadClientPool;
 import ServeurGeneriqueTCP.protocol.Protocole;
 import ServeurGeneriqueTCP.utils.Logger;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.*;
-import java.util.Properties;
 
 public class ThreadServeurPool extends ThreadServeur
 {

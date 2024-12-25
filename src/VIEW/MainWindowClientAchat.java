@@ -3,14 +3,10 @@ package VIEW;
 import MODEL.entity.Author;
 import MODEL.entity.CaddyItem;
 import MODEL.entity.Subject;
-import MODEL.networking.Prot_BSPP;
-import MODEL.networking.ResultatBSPP;
 import MODEL.entity.Book;
 import MODEL.networking.SocketManager;
 
-import MODEL.networking.Prot_BSPPnew;
-import ServeurGeneriqueTCP.protocol.Reponse;
-import ServeurGeneriqueTCP.protocol.Requete;
+import MODEL.networking.Prot_BSPP;
 import ServeurGeneriqueTCP.reponses.*;
 import ServeurGeneriqueTCP.requetes.*;
 
@@ -18,7 +14,6 @@ import ServeurGeneriqueTCP.requetes.*;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.List;
@@ -44,7 +39,7 @@ public class MainWindowClientAchat extends JFrame
     private DefaultTableModel cartTableModel;
 
     private Socket clientSocket;
-    private Prot_BSPPnew protocol;
+    private Prot_BSPP protocol;
     private String clientId = null;
 
     public MainWindowClientAchat()
@@ -74,7 +69,7 @@ public class MainWindowClientAchat extends JFrame
         // Connexion au serveur
         try {
             clientSocket = SocketManager.createClientSocket("localhost", "50001"); // PORT_PAYMENT
-            protocol = new Prot_BSPPnew(clientSocket);
+            protocol = new Prot_BSPP(clientSocket);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Erreur de connexion au serveur", "Erreur", JOptionPane.ERROR_MESSAGE);
             System.exit(1);
@@ -173,6 +168,12 @@ public class MainWindowClientAchat extends JFrame
                 RequeteAddClient reqAddClient=new RequeteAddClient(nom,prenom,telephone,adresse,email);
                 ReponseAddClient repAddClient=(ReponseAddClient)protocol.echangeObject(reqAddClient);
 
+                if (repAddClient instanceof ReponseAddClient== false)
+                {
+                    JOptionPane.showMessageDialog(this, "Erreur lors de la création du client", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 if (repAddClient.isSuccess())
                 {
                     clientId = String.valueOf(repAddClient.getIdClient());
@@ -188,13 +189,13 @@ public class MainWindowClientAchat extends JFrame
             {
                 // Vérifier si le client existe
                 RequeteGetClient reqGetClient=new RequeteGetClient(nom,prenom);
-                /*SocketManager.sendObject(clientSocket, reqGetClient);
-
-                // Réception d'un objet
-                Object receivedObject = SocketManager.receiveObject(clientSocket);
-                ReponseGetClient repGetClient = (ReponseGetClient) receivedObject;*/
-
                 ReponseGetClient repGetClient=(ReponseGetClient)protocol.echangeObject(reqGetClient);
+
+                if (repGetClient instanceof ReponseGetClient== false)
+                {
+                    JOptionPane.showMessageDialog(this, "Erreur lors de la récupération du client", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
 
                 if (repGetClient.isSuccess())
                 {
@@ -243,6 +244,12 @@ public class MainWindowClientAchat extends JFrame
                 reqGetBooks=new RequeteGetBooks(titreField.getText(),"NULL","NULL","NULL", 0);
                 repGetBooks=(ReponseGetBooks)protocol.echangeObject(reqGetBooks);
 
+                if (repGetBooks instanceof ReponseGetBooks== false)
+                {
+                    JOptionPane.showMessageDialog(this, "Erreur lors de la récupération des livres", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 if (repGetBooks.isSuccess())
                 {
                     updateBooksTable(repGetBooks.getBooks());
@@ -252,13 +259,20 @@ public class MainWindowClientAchat extends JFrame
                     JOptionPane.showMessageDialog(this, "Erreur: " + repGetBooks.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
                 }
             }
-            if (auteurCombo.getSelectedItem() !=null && !auteurCombo.getSelectedItem().toString().equals("NULL"))
+            else if (!auteurCombo.getSelectedItem().toString().equals("NULL"))
             {
                 String firstName=auteurCombo.getSelectedItem().toString().split(" ")[0];
+
                 String lastName=auteurCombo.getSelectedItem().toString().split(" ")[1];
 
-                reqGetBooks=new RequeteGetBooks("NULL",firstName,lastName,"NULL", 0);
+                reqGetBooks=new RequeteGetBooks("NULL",lastName,firstName,"NULL", 0);
                 repGetBooks=(ReponseGetBooks)protocol.echangeObject(reqGetBooks);
+
+                if(repGetBooks instanceof ReponseGetBooks== false)
+                {
+                    JOptionPane.showMessageDialog(this, "Erreur lors de la récupération des livres", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
 
                 if (repGetBooks.isSuccess())
                 {
@@ -269,11 +283,17 @@ public class MainWindowClientAchat extends JFrame
                     JOptionPane.showMessageDialog(this, "Erreur: " + repGetBooks.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
                 }
             }
-            else if(sujetCombo.getSelectedItem() !=null && !sujetCombo.getSelectedItem().toString().equals("NULL"))
+            else if(!sujetCombo.getSelectedItem().toString().equals("NULL"))
             {
                 reqGetBooks=new RequeteGetBooks("NULL","NULL","NULL",sujetCombo.getSelectedItem().toString(), 0);
                 repGetBooks=(ReponseGetBooks)protocol.echangeObject(reqGetBooks);
 
+                if (repGetBooks instanceof ReponseGetBooks== false)
+                {
+                    JOptionPane.showMessageDialog(this, "Erreur lors de la récupération des livres", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 if (repGetBooks.isSuccess())
                 {
                     updateBooksTable(repGetBooks.getBooks());
@@ -283,10 +303,17 @@ public class MainWindowClientAchat extends JFrame
                     JOptionPane.showMessageDialog(this, "Erreur: " + repGetBooks.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
                 }
             }
-            else if ((float)prixMaxSpinner.getValue() != 0)
+            else if (Float.parseFloat(prixMaxSpinner.getValue().toString()) != 0.0)
             {
-                reqGetBooks=new RequeteGetBooks("NULL","NULL","NULL","NULL", (float)prixMaxSpinner.getValue());
+                float prixMax=Float.parseFloat(prixMaxSpinner.getValue().toString());
+                reqGetBooks=new RequeteGetBooks("NULL","NULL","NULL","NULL", prixMax);
                 repGetBooks=(ReponseGetBooks)protocol.echangeObject(reqGetBooks);
+
+                if (repGetBooks instanceof ReponseGetBooks== false)
+                {
+                    JOptionPane.showMessageDialog(this, "Erreur lors de la récupération des livres", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
 
                 if (repGetBooks.isSuccess())
                 {
@@ -337,7 +364,7 @@ public class MainWindowClientAchat extends JFrame
             int quantity = (int) quantitySpinner.getValue();
 
             // Vérifier le stock disponible
-            int stockDisponible = Integer.parseInt(booksTable.getValueAt(selectedRow, 5).toString());
+            int stockDisponible = Integer.parseInt(booksTable.getValueAt(selectedRow, 6).toString());
             if (quantity > stockDisponible)
             {
                 JOptionPane.showMessageDialog(this, "Stock insuffisant", "Erreur", JOptionPane.ERROR_MESSAGE);
@@ -475,20 +502,107 @@ public class MainWindowClientAchat extends JFrame
 
         if (confirm == JOptionPane.YES_OPTION)
         {
+            //entrer les infos de la carte avec verification si information est valide, correcte avec le regex
+            String cardName;
+            String cardNumber;
+            String cardExpiry;
+            String cardCVV;
+            do {
+                cardName = JOptionPane.showInputDialog(this, "Nom du titulaire de la carte(au moins 2 lettres) :");
+            } while (!cardName.matches("^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$"));
+
+            do {
+                cardNumber = JOptionPane.showInputDialog(this, "Numéro de carte(16 chiffres) :");
+            } while (!cardNumber.matches("^[0-9]{16}$"));
+
+
+            do {
+
+                cardExpiry = JOptionPane.showInputDialog(this, "Date d'expiration (MM/YYYY) :");
+            }while (!cardExpiry.matches("^(0[1-9]|1[0-2])/(20[2-9][0-9])$")); // veux dire que la date doit etre entre 2020 et 2099 et le mois entre 01 et 12
+
+            do {
+                cardCVV = JOptionPane.showInputDialog(this, "Code de sécurité (CVV) :");
+            }while (!cardCVV.matches("^[0-9]{3}$"));//le cvv doit etre de 3 chiffres
+
+
             try
             {
-                RequetePayCaddy reqPayCaddy=new RequetePayCaddy(Integer.parseInt(clientId));
-                ReponsePayCaddy repPayCaddy=(ReponsePayCaddy)protocol.echangeObject(reqPayCaddy);
+                int idClient = Integer.parseInt(clientId);
+
+                //MAJ le stock des livres avant de payer
+                RequeteGetCaddy reqGetCaddy=new RequeteGetCaddy(idClient);
+                ReponseGetCaddy repGetCaddy=(ReponseGetCaddy)protocol.echangeObject(reqGetCaddy);
+
+                if (repGetCaddy instanceof ReponseGetCaddy== false)
+                {
+                    JOptionPane.showMessageDialog(this,
+                            "Erreur lors de la récupération du panier",
+                            "Erreur",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                if(repGetCaddy.isSuccess()) {
+                    System.out.println("Panier récupéré avec succès");
+
+                    RequeteGetCaddyItems reqGetCaddyItems = new RequeteGetCaddyItems(repGetCaddy.getIdCaddy());
+                    ReponseGetCaddyItems repGetCaddyItems = (ReponseGetCaddyItems) protocol.echangeObject(reqGetCaddyItems);
+
+                    if (repGetCaddyItems.isSuccess()) {
+                        System.out.println("Items du panier récupérés avec succès");
+
+                        for (CaddyItem caddyItem : repGetCaddyItems.getItems()) {
+                            System.out.println("Mise à jour du stock pour le livre: " + caddyItem.getBook().getTitle());
+
+                            caddyItem.getBook().setStockQuantity(caddyItem.getBook().getStockQuantity() - caddyItem.getQuantity());
+                            RequeteUpdateBook reqUpdateBook = new RequeteUpdateBook(caddyItem.getBook().getId(), caddyItem.getBook().getAuthor().getId(), caddyItem.getBook().getSubject().getId(), caddyItem.getBook().getTitle(), caddyItem.getBook().getIsbn(), caddyItem.getBook().getPageCount(), caddyItem.getBook().getStockQuantity(), caddyItem.getBook().getPrice(), caddyItem.getBook().getPublishYear());
+                            ReponseUpdateBook repUpdateBook = (ReponseUpdateBook) protocol.echangeObject(reqUpdateBook);
+
+                            if (repUpdateBook instanceof ReponseUpdateBook == false) {
+                                JOptionPane.showMessageDialog(this,
+                                        "Erreur lors de la mise à jour du stock pour le livre: " + caddyItem.getBook().getTitle(),
+                                        "Erreur",
+                                        JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
+
+                            if (repUpdateBook.isSuccess()) {
+                                System.out.println("Stock mis à jour pour le livre: " + caddyItem.getBook().getTitle());
+                            } else {
+                                JOptionPane.showMessageDialog(this,
+                                        "Erreur lors de la mise à jour du stock pour le livre: " + caddyItem.getBook().getTitle(),
+                                        "Erreur",
+                                        JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    }
+                }
+
+
+                //Payer le caddy
+                RequetePayCaddy reqPayCaddy = new RequetePayCaddy(idClient);
+                ReponsePayCaddy repPayCaddy = (ReponsePayCaddy) protocol.echangeObject(reqPayCaddy);
+
+                if (repPayCaddy instanceof ReponsePayCaddy== false)
+                {
+                    JOptionPane.showMessageDialog(this,
+                            "Erreur lors du paiement",
+                            "Erreur",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
 
                 if (repPayCaddy.isSuccess())
                 {
                     JOptionPane.showMessageDialog(this,
-                    repPayCaddy.getMessage(),
-                    "Succès",
-                    JOptionPane.INFORMATION_MESSAGE);
+                            repPayCaddy.getMessage(),
+                            "Succès",
+                            JOptionPane.INFORMATION_MESSAGE);
 
                     // Après le paiement, réinitialiser pour un nouveau client
                     resetForNewClient();
+
                 }
                 else
                 {
@@ -571,13 +685,13 @@ public class MainWindowClientAchat extends JFrame
         try
         {
             RequeteGetAuthors reqGetAuthors=new RequeteGetAuthors();
-            SocketManager.sendObject(clientSocket, reqGetAuthors);
+            ReponseGetAuthors repGetAuthors=(ReponseGetAuthors)protocol.echangeObject(reqGetAuthors);
 
-            // Réception d'un objet
-            Object receivedObject = SocketManager.receiveObject(clientSocket);
-            ReponseGetAuthors repGetAuthors = (ReponseGetAuthors) receivedObject;
-
-            //ReponseGetAuthors repGetAuthors=(ReponseGetAuthors)protocol.echangeObject(reqGetAuthors);
+            if (repGetAuthors instanceof ReponseGetAuthors== false)
+            {
+                JOptionPane.showMessageDialog(this, "Erreur lors du chargement des auteurs", "Erreur", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
             if(repGetAuthors.isSuccess())
             {
@@ -603,6 +717,12 @@ public class MainWindowClientAchat extends JFrame
 
             RequeteGetSubjects reqGetSubjects=new RequeteGetSubjects();
             ReponseGetSubjects repGetSubjects=(ReponseGetSubjects)protocol.echangeObject(reqGetSubjects);
+
+            if (repGetSubjects instanceof ReponseGetSubjects== false)
+            {
+                JOptionPane.showMessageDialog(this, "Erreur lors du chargement des sujets", "Erreur", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
             if(repGetSubjects.isSuccess())
             {
