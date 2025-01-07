@@ -91,7 +91,6 @@ public class Prot_BSPP implements Protocole
         {
             logger.Trace("Client ajouté, "+"id= "+res.getId());
             return new ReponseAddClient(true,"Operation reussie", res.getId());
-
         }
         else
         {

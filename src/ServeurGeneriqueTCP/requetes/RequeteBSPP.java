@@ -19,6 +19,8 @@ import java.io.Serializable;
         case "CANCEL_CADDY"://annule le caddy d'un client -> par idclient
         case "PAY_CADDY": //paie le caddy d'un client -> par idclient
         case "GET_CADDY": //recup le caddy d'un client -> par idclient
+        case "UPDATE_BOOK": //permet de mettre a jour un livre -> par id, par auteur, par sujet, par titre, par isbn, par pageCount, par stockQuantity, par price, par publishYear
+
 
      */
 public abstract class RequeteBSPP implements Requete, Serializable

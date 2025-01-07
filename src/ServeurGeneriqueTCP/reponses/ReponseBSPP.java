@@ -19,6 +19,7 @@ import java.io.Serializable;
         case "CANCEL_CADDY"://reponse sera un boolean(status -> true ou false) + message
         case "PAY_CADDY": //reponse sera un boolean(status -> true ou false) + message
         case "GET_CADDY": //reponse sera un boolean(status -> true ou false) + message + id + Date + Amount + Payed
+        case "UPDATE_BOOK": //reponse sera un boolean(status -> true ou false) + message
 
      */
 public abstract class ReponseBSPP implements Reponse, Serializable

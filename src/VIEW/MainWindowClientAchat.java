@@ -44,7 +44,7 @@ public class MainWindowClientAchat extends JFrame
 
     public MainWindowClientAchat()
     {
-        setTitle("Application Achat");
+        setTitle("Application Achat (vendeur)");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // Configuration des spinners
