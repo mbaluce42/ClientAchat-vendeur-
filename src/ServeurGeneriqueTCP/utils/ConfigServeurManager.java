@@ -19,24 +19,24 @@ public class ConfigServeurManager
 
     public static void readConfig()
     {
-        Properties props = new Properties();
         File configFile = new File(CONFIG_FILE);
+        System.out.println("Chemin absolu du fichier : " + configFile.getAbsolutePath());
+        System.out.println("Le fichier existe : " + configFile.exists());
 
-        try
-        {
-            if (!configFile.exists())
-            {
-                //cree fichier de config avec valeurs par defaut
+        try {
+            if (!configFile.exists()) {
+                System.out.println("Création du fichier de configuration...");
                 props.setProperty("PORT", "50001");
                 props.setProperty("TAILLE_POOL", "2");
-                props.setProperty("MODE_POOL", "true");//true = pool, false = a la demande
+                props.setProperty("MODE_POOL", "true");
 
                 props.store(new FileOutputStream(configFile), null);
             }
-            else
-            {
-                //charge les valeurs du fichier de config
+            else {
+                System.out.println("Chargement du fichier de configuration existant...");
                 props.load(new FileInputStream(configFile));
+                // Afficher les propriétés chargées
+                System.out.println("Propriétés chargées : " + props);
             }
         } catch (IOException e) {
             System.out.println("Erreur configuration: " + e.getMessage());
@@ -46,16 +46,16 @@ public class ConfigServeurManager
 
     public int getPort()
     {
-        return Integer.parseInt(props.getProperty("PORT", "50001"));
+        return Integer.parseInt(props.getProperty("PORT"));
     }
 
     public int getTaillePool()
     {
-        return Integer.parseInt(props.getProperty("TAILLE_POOL", "2"));
+        return Integer.parseInt(props.getProperty("TAILLE_POOL"));
     }
 
     public boolean getModePool()
     {
-        return Boolean.parseBoolean(props.getProperty("MODE_POOL", "true"));
+        return Boolean.parseBoolean(props.getProperty("MODE_POOL"));
     }
 }
