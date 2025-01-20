@@ -11,9 +11,9 @@ import java.net.SocketTimeoutException;
 public class ThreadServeurDemande extends ThreadServeur
 {
 
-    public ThreadServeurDemande(int port, Protocole protocole, Logger logger) throws IOException
+    public ThreadServeurDemande(int port, Protocole protocole, Logger logger,boolean secure) throws IOException
     {
-        super(port, protocole, logger);
+        super(port, protocole, logger, secure);
     }
 
     @Override

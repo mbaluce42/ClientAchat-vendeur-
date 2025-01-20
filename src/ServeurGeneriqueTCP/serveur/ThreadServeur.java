@@ -3,11 +3,15 @@ package ServeurGeneriqueTCP.serveur;
 import ServeurGeneriqueTCP.protocol.Protocole;
 import ServeurGeneriqueTCP.utils.Logger;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.security.KeyStore;
 import java.util.Properties;
 
 
@@ -18,28 +22,105 @@ public abstract class ThreadServeur extends Thread
     protected Protocole protocole;
     protected Logger logger;
     private static final String CONFIG_FILE = "serveurPool_config.txt";
+    private static final String KEYSTORE_SERVER_FILE = "src/server_keystore.jks";
+    private static final String KEYSTORE_SERVER_PASSWORD = "serverpass";
+
 
     protected ServerSocket ssocket;
 
     // Constructeur pour le mode "à la demande"
-    public ThreadServeur(int port, Protocole protocole, Logger logger) throws IOException
+    public ThreadServeur(int port, Protocole protocole, Logger logger,boolean secure) throws IOException
     {
         super("TH Serveur (port=" + port + ",protocole=" + protocole.getNom() + ")");
         this.port = port;
         this.protocole = protocole;
         this.logger = logger;
-        ssocket = new ServerSocket(port);
+        //ssocket = new ServerSocket(port);
+        //utilisation ssl/tls
+        if(secure)
+        {
+            try
+            {
+                KeyStore serverKs = KeyStore.getInstance("JKS");
+                try (FileInputStream fileInputStream = new FileInputStream(KEYSTORE_SERVER_FILE))
+                {
+                    serverKs.load(fileInputStream,KEYSTORE_SERVER_PASSWORD.toCharArray());
+                }
+
+                //config gestionnaire de clés
+                KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
+                keyManagerFactory.init(serverKs, KEYSTORE_SERVER_PASSWORD.toCharArray());
+
+                //config gestionnaire de confiance
+                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
+                trustManagerFactory.init(serverKs);
+
+                //config SSLContext
+                SSLContext SsIC = SSLContext.getInstance("TLSv1.3");
+                SsIC.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
+
+                //création du serveur
+                ssocket = SsIC.getServerSocketFactory().createServerSocket(port);
+            }
+            catch (Exception e)
+            {
+                logger.Trace("Erreur lors de la création du serveur sécurisé: " + e.getMessage());
+                System.exit(1);
+            }
+        }
+        else
+        {
+            ssocket = new ServerSocket(port);
+        }
     }
 
     // Constructeur pour le mode "pool"
-    public ThreadServeur(int port, Protocole protocole, int taillePool, Logger logger) throws IOException
+    public ThreadServeur(int port, Protocole protocole, int taillePool, Logger logger, boolean secure) throws IOException
     {
         super("TH Serveur (port=" + port + ",protocole=" + protocole.getNom() + ")");
         this.port = port;
         this.protocole = protocole;
         this.logger = logger;
         this.taillePool = taillePool;
-        ssocket = new ServerSocket(port);
+        //ssocket = new ServerSocket(port);
+
+        //utilisation ssl/tls
+
+        if(secure)
+        {
+            try
+            {
+                KeyStore serverKs = KeyStore.getInstance("JKS");
+                try (FileInputStream fileInputStream = new FileInputStream(KEYSTORE_SERVER_FILE))
+                {
+                    serverKs.load(fileInputStream,KEYSTORE_SERVER_PASSWORD.toCharArray());
+                }
+
+                //config gestionnaire de clés
+                KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
+                keyManagerFactory.init(serverKs, KEYSTORE_SERVER_PASSWORD.toCharArray());
+
+                //config gestionnaire de confiance
+                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
+                trustManagerFactory.init(serverKs);
+
+                //config SSLContext
+                SSLContext SsIC = SSLContext.getInstance("TLSv1.3");
+                SsIC.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
+
+                //création du serveur
+                ssocket = SsIC.getServerSocketFactory().createServerSocket(port);
+            }
+            catch (Exception e)
+            {
+                logger.Trace("Erreur lors de la création du serveur sécurisé: " + e.getMessage());
+                System.exit(1);
+            }
+        }
+        else
+        {
+            ssocket = new ServerSocket(port);
+        }
     }
 
     public void readConfig()

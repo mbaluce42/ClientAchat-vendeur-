@@ -16,6 +16,11 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.io.IOException;
 import java.net.Socket;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.List;
 
 
@@ -42,6 +47,8 @@ public class MainWindowClientAchat extends JFrame
     private Prot_BSPP protocol;
     private String clientId = null;
 
+    private static final boolean SECURE = true;
+
     public MainWindowClientAchat()
     {
         setTitle("Application Achat (vendeur)");
@@ -67,10 +74,14 @@ public class MainWindowClientAchat extends JFrame
         setLocationRelativeTo(null);
 
         // Connexion au serveur
-        try {
-            clientSocket = SocketManager.createClientSocket("localhost", "50001"); // PORT_PAYMENT
+        try
+        {
+            clientSocket = SocketManager.createClientSocket("localhost", "50001",SECURE); // PORT_PAYMENT
             protocol = new Prot_BSPP(clientSocket);
-        } catch (IOException e) {
+        }
+        catch (IOException | UnrecoverableKeyException | CertificateException | KeyStoreException |
+               NoSuchAlgorithmException | KeyManagementException e)
+        {
             JOptionPane.showMessageDialog(this, "Erreur de connexion au serveur", "Erreur", JOptionPane.ERROR_MESSAGE);
             System.exit(1);
         }

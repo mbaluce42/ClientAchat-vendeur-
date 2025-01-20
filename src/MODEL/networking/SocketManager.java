@@ -1,13 +1,20 @@
 package MODEL.networking;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.*;
 import java.net.*;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.util.Arrays;
 
 public class SocketManager {
     public static final int BUFFER_SIZE = 1500;
     private static ObjectOutputStream out;
     private static ObjectInputStream in;
+    private static final String KEYSTORE_CLIENT_FILE = "src/client_keystore.jks";
+    private static final String KEYSTORE_CLIENT_PASSWORD = "clientpass";
 
     public static void initializeStreams(Socket socket) throws IOException {
         if (out == null || in == null) {
@@ -39,17 +46,52 @@ public class SocketManager {
         }
     }
 
-    public static Socket createClientSocket(String serverIp, String serverPort) throws IOException
-    {
+    public static Socket createClientSocket(String serverIp, String serverPort, boolean secure) throws IOException, UnrecoverableKeyException, CertificateException, KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
         Socket clientSocket = null;
-        try {
-            clientSocket = new Socket(serverIp, Integer.parseInt(serverPort));
-            return clientSocket;
-        } catch (IOException e) {
-            if (clientSocket != null) {
-                clientSocket.close();
+        if (!secure)
+        {
+            try {
+                clientSocket = new Socket(serverIp, Integer.parseInt(serverPort));
+                return clientSocket;
+            } catch (IOException e) {
+                if (clientSocket != null) {
+                    clientSocket.close();
+                }
+                throw e;
             }
-            throw e;
+        }
+        else//secure == true
+        {
+            try
+            {
+                KeyStore clientKs = KeyStore.getInstance("JKS");
+                try (FileInputStream fileInputStream = new FileInputStream(KEYSTORE_CLIENT_FILE))
+                {
+                    clientKs.load(fileInputStream,KEYSTORE_CLIENT_PASSWORD.toCharArray());
+                }
+
+                //config gestionnaire de clés
+                KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
+                keyManagerFactory.init(clientKs, KEYSTORE_CLIENT_PASSWORD.toCharArray());
+
+                //config gestionnaire de confiance
+                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
+                trustManagerFactory.init(clientKs);
+
+                //config SSLContext
+                SSLContext SsIC = SSLContext.getInstance("TLSv1.3");
+                SsIC.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
+
+                clientSocket = SsIC.getSocketFactory().createSocket(serverIp, Integer.parseInt(serverPort));
+                return clientSocket;
+            }
+            catch (Exception e)
+            {
+                if (clientSocket != null) {
+                    clientSocket.close();
+                }
+                throw e;
+            }
         }
     }
 
@@ -132,7 +174,7 @@ public class SocketManager {
         }*/
 
         try {
-            client = SocketManager.createClientSocket("localhost", "50001");
+            client = SocketManager.createClientSocket("localhost", "50001",false);
 
             // Envoi d'un objet
             String testObject = "Hello, Server!";
@@ -145,8 +187,9 @@ public class SocketManager {
                 System.out.println("Message reçu (Objet) : " + receivedObject);
             }
         }
-        catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
 
 

@@ -11,7 +11,7 @@ public class MainServeur
 {
     /*private static final int PORT = 50000;
     private static final int TAILLE_POOL = 3;*/
-
+    private static final boolean SECURE = true;
 
     // Logger simple pour la console
     static class ConsoleLogger implements Logger
@@ -44,13 +44,13 @@ public class MainServeur
             //si mode = true, on utilise le mode pool sinon on utilise le mode à la demande
             if (mode)
             {
-                serveur = new ThreadServeurPool(port, protocole,taillePool, logger);
+                serveur = new ThreadServeurPool(port, protocole,taillePool, logger,SECURE);
                 logger.Trace("Démarrage du serveur en mode pool sur le port " + port +
                         " avec " + taillePool + " threads");
             }
             else
             {
-                serveur = new ThreadServeurDemande(port, protocole, logger);
+                serveur = new ThreadServeurDemande(port, protocole, logger,SECURE);
                 logger.Trace("Démarrage du serveur en mode à la demande sur le port " + port);
             }
 

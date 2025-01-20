@@ -15,9 +15,9 @@ public class ThreadServeurPool extends ThreadServeur
     private static int taillePool;
     private static int port;
 
-    public ThreadServeurPool(int port, Protocole protocole, int taillePool, Logger logger) throws IOException
+    public ThreadServeurPool(int port, Protocole protocole, int taillePool, Logger logger,boolean secure) throws IOException
     {
-        super(port, protocole, logger);
+        super(port, protocole, logger, secure);
 
         connexionsEnAttente = new FileAttente();
         pool = new ThreadGroup("POOL");
