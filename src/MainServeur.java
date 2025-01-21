@@ -9,8 +9,6 @@ import ServeurGeneriqueTCP.utils.ConfigServeurManager;
 
 public class MainServeur
 {
-    /*private static final int PORT = 50000;
-    private static final int TAILLE_POOL = 3;*/
     private static final boolean SECURE = true;
 
     // Logger simple pour la console
