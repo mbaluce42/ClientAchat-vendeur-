@@ -6,7 +6,7 @@ L'application implémente une architecture complète utilisant **Java Sockets**,
 
 ## ✨ Fonctionnalités
 
-### 🖥️ Partie Serveur (`ServeurAchat` -\> `MainServeur`)
+### 🖥️ Partie Serveur (`ServeurAchat` -\> `MainServeur`) 
 
 * **Architecture Multi-threadée :**
     * **Mode Pool de Threads :** Gestion simultanée de plusieurs clients via un pool de threads pré-instanciés.
